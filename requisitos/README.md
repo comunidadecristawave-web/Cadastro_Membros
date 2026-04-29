@@ -4,7 +4,7 @@
 
 # Estrutura de Requisitos — Plataforma de Gestão de Membros
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 29/04/2026
 
 ---
 
@@ -32,8 +32,8 @@ Plataforma web para gestão e cadastro de membros de igrejas, com arquitetura mu
 
 | Requisito | Arquivo | Prioridade | Status |
 |-----------|---------|------------|--------|
-| Autenticação de Usuário (login/logout) | `autenticacao/autenticacao-usuario.md` | 🟢 MVP | 🔄 A escrever |
-| Recuperação de Senha | `autenticacao/recuperacao-senha.md` | 🟢 MVP | 🔄 A escrever |
+| Autenticação de Usuário (login/logout) | [`autenticacao/autenticacao-usuario.md`](./funcionais/autenticacao/autenticacao-usuario.md) | 🟢 MVP | ✅ Aprovado |
+| Recuperação de Senha | [`autenticacao/recuperacao-senha.md`](./funcionais/autenticacao/recuperacao-senha.md) | 🟢 MVP | ✅ Aprovado |
 
 ---
 
@@ -47,12 +47,12 @@ Gerencia o ciclo de vida completo de cada membro. Vínculo obrigatório com líd
 
 | Requisito | Arquivo | Prioridade | Status |
 |-----------|---------|------------|--------|
-| Listar Membros | `membros/listar-membros.md` | 🟢 MVP | 🔄 A escrever |
-| Criar Membro | `membros/criar-membro.md` | 🟢 MVP | 🔄 A escrever |
-| Editar Membro | `membros/editar-membro.md` | 🟢 MVP | 🔄 A escrever |
-| Visualizar Membro | `membros/visualizar-membro.md` | 🟢 MVP | 🔄 A escrever |
-| Inativar Membro | `membros/inativar-membro.md` | 🟢 MVP | 🔄 A escrever |
-| Reativar Membro | `membros/reativar-membro.md` | 🟢 MVP | 🔄 A escrever |
+| Criar Membro | [`membros/criar-membro.md`](./funcionais/membros/criar-membro.md) | 🟢 MVP | ✅ Aprovado |
+| Listar Membros | [`membros/listar-membros.md`](./funcionais/membros/listar-membros.md) | 🟢 MVP | ✅ Aprovado |
+| Visualizar Membro | [`membros/visualizar-membro.md`](./funcionais/membros/visualizar-membro.md) | 🟢 MVP | ✅ Aprovado |
+| Editar Membro | [`membros/editar-membro.md`](./funcionais/membros/editar-membro.md) | 🟢 MVP | ✅ Aprovado |
+| Inativar Membro | [`membros/inativar-membro.md`](./funcionais/membros/inativar-membro.md) | 🟢 MVP | ✅ Aprovado |
+| Reativar Membro | [`membros/reativar-membro.md`](./funcionais/membros/reativar-membro.md) | 🟢 MVP | ✅ Aprovado |
 
 ---
 
@@ -62,11 +62,11 @@ Uma célula é definida pelo seu líder + endereço + dia + horário. Um membro 
 
 | Requisito | Arquivo | Prioridade | Status |
 |-----------|---------|------------|--------|
-| Listar Células | `celulas/listar-celulas.md` | 🟢 MVP | 🔄 A escrever |
-| Visualizar Célula | `celulas/visualizar-celula.md` | 🟢 MVP | 🔄 A escrever |
-| Editar Célula | `celulas/editar-celula.md` | 🟢 MVP | 🔄 A escrever |
-| Vincular Membro à Célula | `celulas/vincular-membro-celula.md` | 🟢 MVP | 🔄 A escrever |
-| Redistribuir Membros ao Inativar Líder | `celulas/redistribuir-membros-lider.md` | 🟣 P2 | 🔄 A escrever |
+| Listar Células | `celulas/listar-celulas.md` | 🟢 MVP | ✅ Aprovado |
+| Visualizar Célula | `celulas/visualizar-celula.md` | 🟢 MVP | ✅ Aprovado |
+| Editar Célula | `celulas/editar-celula.md` | 🟢 MVP | ✅ Aprovado |
+| ~~Vincular Membro à Célula~~ | — coberto por Criar/Editar/Reativar Membro | ~~🟢 MVP~~ | ❌ Removido |
+| Redistribuir Membros ao Inativar Líder | — coberto por Inativar Membro e Editar Membro | 🟣 P2 | ❌ Removido |
 
 ---
 
@@ -76,7 +76,7 @@ Funcionalidade de onboarding obrigatória no MVP. Download de template, upload, 
 
 | Requisito | Arquivo | Prioridade | Status |
 |-----------|---------|------------|--------|
-| Importação de Base via CSV | `importacao/importacao-csv.md` | 🟢 MVP | 🔄 A escrever |
+| Importação de Base via CSV | [`importacao/importacao-csv.md`](./funcionais/importacao/importacao-csv.md) | 🟢 MVP | ✅ Aprovado |
 
 ---
 
@@ -84,10 +84,10 @@ Funcionalidade de onboarding obrigatória no MVP. Download de template, upload, 
 
 | Requisito | Arquivo | Prioridade | Status |
 |-----------|---------|------------|--------|
-| Dashboard Geral | `dashboard/dashboard.md` | 🟢 MVP | 🔄 A escrever |
+| Dashboard Geral | [`dashboard/dashboard.md`](./funcionais/dashboard/dashboard.md) | 🟢 MVP | ✅ Aprovado |
 
-**Cards:** total de membros ativos, total de células ativas, membros por célula, aniversariantes do mês.
-**Gráfico:** crescimento de membros por período (anual, semestral, trimestral, personalizado).
+**Cards:** total de membros ativos, total de células ativas, aniversariantes do mês.
+**Gráfico:** total acumulado de membros com rótulo de novos ingressos por período (anual, semestral, trimestral, personalizado).
 
 ---
 
