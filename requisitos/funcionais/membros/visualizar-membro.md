@@ -2,7 +2,7 @@
 
 [Módulo: Membros](../../README.md) › **Visualizar Membro**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -32,7 +32,7 @@ Apresentadas em cards ou área de destaque no topo do perfil, para leitura rápi
 
 - **Idade atual** — calculada automaticamente com base na data de nascimento. Exibida em anos completos (ex: "34 anos").
 - **Membro há** — calculado com base na data de ingresso. Exibido em anos completos; se menor que 1 ano, exibir em meses (ex: "2 anos" ou "7 meses").
-- **Membros na célula** — exibido **somente se o membro for líder de célula**. Indica a quantidade de membros ativos atualmente vinculados à célula liderada por ele (ex: "12 membros").
+- **Total de membros liderados** — exibido **somente se o membro for líder de célula**. Indica a soma de membros ativos vinculados a ele como líder. Exibido no formato **"X membros liderados (em N células)"**, onde N é o número de células que ele conduz (ex: "20 membros liderados (em 2 células)").
 
 ### Dados Pessoais
 
@@ -52,16 +52,20 @@ Apresentadas em cards ou área de destaque no topo do perfil, para leitura rápi
 - Bairro
 - Cidade
 
-### Vínculo com Célula
+### Vínculo com Líder
 
-- **Discipulado por:** nome do líder de célula ao qual o membro está vinculado (clicável, navega para a visualização do membro-líder)
+- **Discipulado por:** nome do líder ao qual o membro está vinculado (clicável, navega para a visualização do membro-líder). O detalhamento das células do líder (dias, horários e endereços) está disponível no perfil do próprio líder.
 
 ### Dados de Liderança (exibidos somente se o membro for líder de célula)
 
+Para líderes com múltiplas células, cada célula é exibida em um bloco separado com:
+
 - Dia da célula
 - Horário da célula
+- Tipo(s) da célula (ex: "Kids", "Adulto, Teens")
 - Endereço da célula (Rua, Número, Complemento, Bairro, Cidade)
-- Quantidade de membros ativos na célula (derivado)
+
+O total de membros ativos discipulados pelo líder é exibido no card de destaque no topo. Não há contagem por célula individual — o vínculo é membro→líder, não membro→célula específica.
 
 ## Ações Disponíveis
 
@@ -113,9 +117,9 @@ A tela oferece acesso direto às principais ações sobre o membro:
 
 - O sistema deve calcular **"membro há"** com base na diferença entre a data de ingresso e a data atual: exibir em anos completos quando igual ou superior a 12 meses; exibir em meses quando inferior a 12 meses.
 
-- O sistema deve calcular **"membros na célula"** contando apenas membros com status **Ativo** vinculados ao líder; membros inativos não entram na contagem.
+- O sistema deve calcular o **total de membros liderados** somando os membros com status **Ativo** vinculados ao líder; membros inativos não entram na contagem. O card exibe o total no formato "X membros liderados (em N células)".
 
-- O sistema deve exibir a seção de dados de liderança (dia, horário, endereço da célula e quantidade de membros) somente quando o membro visualizado possuir o flag `é líder de célula` ativo.
+- O sistema deve exibir a seção de dados de liderança somente quando o membro visualizado possuir o flag `é líder de célula` ativo. Cada célula é exibida em um bloco separado com seu dia, horário, tipos e endereço. Não há contagem de membros por bloco de célula individual — o total de membros liderados é exibido no card de destaque no topo.
 
 - O sistema deve exibir o campo Complemento do endereço somente quando ele estiver preenchido; campos vazios opcionais não devem gerar linhas em branco na exibição.
 
@@ -141,7 +145,7 @@ A tela oferece acesso direto às principais ações sobre o membro:
   - Exibir status `Ativo` com badge visual
   - Exibir `Discipulado por: Carlos Souza` (clicável)
   - Não exibir seção de dados de liderança
-  - Não exibir card "Membros na célula"
+  - Não exibir card "Total de membros liderados"
   - Exibir botão "Editar" e botão "Inativar"
   - Não exibir botão "Reativar"
 
@@ -154,7 +158,7 @@ A tela oferece acesso direto às principais ações sobre o membro:
 **Quando** o usuário visualiza o perfil de `Carlos Souza`
 
 **Então** o sistema deve:
-  - Exibir card `Membros na célula: 12`
+  - Exibir card `12 membros liderados (em 1 célula)`
   - Exibir `Membro há 8 anos`
   - Exibir seção de dados de liderança com: Dia `Quarta-feira`, Horário `19:00`, endereço da célula
   - Exibir botão "Editar" e botão "Inativar"
@@ -210,14 +214,14 @@ A tela oferece acesso direto às principais ações sobre o membro:
 
 ---
 
-## Cenário 7: Contagem de membros na célula exclui inativos
+## Cenário 7: Contagem de membros liderados exclui inativos
 
-**Dado que** `Carlos Souza` é líder e possui 12 membros ativos e 3 membros inativos vinculados a ele
+**Dado que** `Carlos Souza` é líder e possui 12 membros ativos e 3 membros inativos vinculados a ele, com 1 célula ativa
 
 **Quando** o usuário visualiza o perfil de `Carlos Souza`
 
 **Então** o sistema deve:
-  - Exibir `Membros na célula: 12`
+  - Exibir card `12 membros liderados (em 1 célula)`
   - Não contabilizar os 3 membros inativos na contagem
 
 ---
@@ -237,6 +241,9 @@ No MVP, o perfil **Administrador** possui esta permissão por padrão.
 | Data       | Card | Autor           | Descrição da Alteração        |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Múltiplas células por líder; tipos de célula exibidos no vínculo e na liderança; card de total de membros atualizado |
+| 30/04/2026 | —    | Thiago Oliveira | Vínculo membro→líder (seção renomeada para "Vínculo com Líder"); card com formato "X membros liderados (em N células)"; campos de célula específica removidos do perfil do membro |
+| 30/04/2026 | —    | Thiago Oliveira | Contagem por bloco de célula removida (vínculo membro→líder, não por célula) |
 
 ---
 

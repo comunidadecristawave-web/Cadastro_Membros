@@ -2,7 +2,7 @@
 
 [Módulo: Dashboard](../../README.md) › **Dashboard Geral**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -37,8 +37,12 @@ Exibe o número total de membros com status **Ativo** no sistema.
 
 Exibe o número total de células cujos líderes estão com status **Ativo**.
 
-- Cada líder ativo representa uma célula ativa
+- Cada célula ativa de um líder ativo é contabilizada individualmente (um líder com duas células conta como duas células ativas)
 - Líderes inativos não são contabilizados
+
+**Comportamento ao clicar no card:**
+
+Ao clicar, o sistema navega diretamente para a **tela de listagem de células**, sem nenhum filtro pré-aplicado, permitindo ao usuário consultar o detalhamento das células ativas.
 
 ### Card 3 — Aniversariantes do Mês
 
@@ -57,7 +61,7 @@ Ao clicar, o sistema abre uma lista modal ou painel lateral com todos os anivers
 > 🎉 Feliz aniversário, [Nome do membro]! Hoje celebramos a vida que Deus plantou em você — única, preciosa e cheia de propósito. A [Nome da Igreja] está ao seu lado, crendo que os melhores anos da sua história ainda estão por vir. Que o Senhor te abençoe e guarde em cada passo deste novo ciclo! 🙏✨
 
 - `[Nome do membro]` é substituído pelo nome real do membro
-- `[Nome da Igreja]` é substituído pelo nome do tenant cadastrado no sistema. No MVP, o valor fixo é **"Comunidade Cristã Wave"**; em versões futuras, deve ser lido dinamicamente do cadastro do tenant
+- `[Nome da Igreja]` é substituído pelo nome do tenant cadastrado no sistema. No MVP, o valor fixo é **"Comunidade Cristã Wave"**; em versões futuras, deve ser lido dinamicamente do cadastro do tenant. **No MVP, este valor deve ser configurado via variável de ambiente ou constante no arquivo de configuração — não deve ser definido inline no código.**
 - O link gerado segue o formato `https://wa.me/55[DDD][número]?text=[mensagem_codificada]`, com o telefone do membro sem máscara e a mensagem codificada em URL
 
 A lista é ordenada pelo dia do aniversário em ordem crescente (quem faz aniversário primeiro no mês aparece no topo).
@@ -81,9 +85,17 @@ A opção padrão ao carregar o dashboard é **Anual**.
 
 ### Leitura do gráfico
 
-- **Eixo Y:** total acumulado de membros ativos
+- **Eixo Y:** total acumulado líquido de membros ativos (ingressos menos inativações até aquele mês)
 - **Eixo X:** meses do período selecionado
-- **Rótulo em cada ponto:** exibe `+N` indicando o número de novos ingressos naquele mês (membros cuja data de ingresso está dentro do mês representado). Se não houver novos ingressos no mês, o rótulo não é exibido
+- **Rótulo em cada ponto:** não exibido diretamente sobre o gráfico
+
+**Tooltip ao passar o cursor sobre um ponto:**
+
+Ao posicionar o cursor sobre qualquer ponto do gráfico, um tooltip é exibido com as informações do mês correspondente:
+
+- **Total acumulado:** `N membros ativos`
+- **Novos ingressos:** `+N` (membros cuja data de ingresso está dentro do mês). Exibido apenas se `N > 0`
+- **Inativações:** `-N` (membros inativados naquele mês). Exibido apenas se `N > 0`
 
 O gráfico reflete sempre o estado atual dos dados — membros inativados reduzem o total acumulado no período em que foram inativados.
 
@@ -121,7 +133,7 @@ O gráfico reflete sempre o estado atual dos dados — membros inativados reduze
   Os cards de métricas são uma visão agregada dos dados gerenciados na listagem de membros.
 
 - **[Listar Células](../celulas/listar-celulas.md)**
-  O card de células ativas reflete o estado da listagem de células.
+  O card de células ativas reflete o estado da listagem de células. Ao clicar no card, o usuário é direcionado para esta tela.
 
 ---
 
@@ -129,9 +141,11 @@ O gráfico reflete sempre o estado atual dos dados — membros inativados reduze
 
 - O sistema deve calcular o total de membros ativos excluindo membros com status Inativo.
 
-- O sistema deve calcular o total de células ativas considerando apenas líderes com status Ativo — cada líder ativo equivale a uma célula ativa.
+- O sistema deve calcular o total de células ativas considerando apenas células cujos líderes possuem status Ativo — cada célula ativa é contada individualmente, independentemente de o mesmo líder ter mais de uma célula.
 
-- O sistema deve calcular os aniversariantes do mês com base no mês atual do servidor, comparando apenas o mês da data de nascimento (não o ano). Apenas membros Ativos entram na contagem.
+- O sistema opera no fuso horário de **Brasília (UTC-3)** para todas as operações de data e hora — carregamento de dashboard, cálculo de aniversariantes do mês e geração de timestamps de auditoria.
+
+- O sistema deve calcular os aniversariantes do mês com base no mês atual no fuso horário de Brasília, comparando apenas o mês da data de nascimento (não o ano). Apenas membros Ativos entram na contagem.
 
 - O sistema deve montar o link do WhatsApp substituindo todos os caracteres não numéricos do telefone, prefixando com `55` (código do Brasil) e codificando a mensagem em URL antes de gerar o link.
 
@@ -139,7 +153,9 @@ O gráfico reflete sempre o estado atual dos dados — membros inativados reduze
 
 - O sistema deve calcular o total acumulado de membros por mês no gráfico considerando: membros com data de ingresso até o último dia do mês representado e que ainda estavam Ativos ao final daquele mês.
 
-- O sistema deve exibir o rótulo `+N` nos pontos do gráfico apenas quando `N > 0` (houve novos ingressos naquele mês).
+- O sistema deve exibir o tooltip ao passar o cursor sobre cada ponto do gráfico, contendo: total acumulado do mês, novos ingressos (`+N`, somente se `N > 0`) e inativações (`-N`, somente se `N > 0`).
+
+- O card "Total de Células Ativas" deve ser clicável e navegar para a listagem de células.
 
 - Todos os cards e o gráfico devem refletir o estado atual dos dados sem necessidade de recarregar a página manualmente.
 
@@ -181,18 +197,39 @@ O gráfico reflete sempre o estado atual dos dados — membros inativados reduze
 
 ---
 
-## Cenário 3: Gráfico anual com rótulos de novos ingressos
+## Cenário 3: Gráfico anual com tooltip de ingressos e inativações
 
-**Dado que** nos últimos 12 meses houve: 8 ingressos em janeiro, 0 em fevereiro, 12 em março (e assim por diante)
+**Dado que** nos últimos 12 meses:
+- Janeiro: 8 ingressos, 0 inativações
+- Fevereiro: 0 ingressos, 3 inativações
+- Março: 12 ingressos, 2 inativações
 
 **Quando** o usuário visualiza o gráfico com o período Anual selecionado
 
 **Então** o sistema deve:
   - Exibir 12 pontos no gráfico (um por mês)
-  - Exibir o rótulo `+8` no ponto de janeiro
-  - Não exibir rótulo no ponto de fevereiro (zero ingressos)
-  - Exibir o rótulo `+12` no ponto de março
-  - O valor de cada ponto deve ser o total acumulado de membros ativos ao final daquele mês
+  - O valor de cada ponto deve ser o total acumulado líquido ao final daquele mês
+
+**Quando** o usuário passa o cursor sobre o ponto de janeiro
+
+**Então** o sistema deve exibir o tooltip:
+  - `Total acumulado: [N] membros ativos`
+  - `+8 novos ingressos`
+  - (sem linha de inativações, pois é 0)
+
+**Quando** o usuário passa o cursor sobre o ponto de fevereiro
+
+**Então** o sistema deve exibir o tooltip:
+  - `Total acumulado: [N] membros ativos`
+  - `-3 inativações`
+  - (sem linha de novos ingressos, pois é 0)
+
+**Quando** o usuário passa o cursor sobre o ponto de março
+
+**Então** o sistema deve exibir o tooltip:
+  - `Total acumulado: [N] membros ativos`
+  - `+12 novos ingressos`
+  - `-2 inativações`
 
 ---
 
@@ -204,7 +241,7 @@ O gráfico reflete sempre o estado atual dos dados — membros inativados reduze
 
 **Então** o sistema deve:
   - Atualizar o gráfico exibindo apenas os últimos 3 meses
-  - Manter os rótulos de novos ingressos nos pontos correspondentes
+  - Manter o comportamento de tooltip nos pontos correspondentes
 
 ---
 
@@ -232,15 +269,29 @@ O gráfico reflete sempre o estado atual dos dados — membros inativados reduze
 
 ---
 
-## Cenário 7: Total de células ativas exclui líderes inativos
+## Cenário 7: Total de células ativas exclui líderes inativos e conta células individualmente
 
-**Dado que** existem 10 membros com flag de líder, sendo 8 ativos e 2 inativos
+**Dado que** existem líderes ativos com o seguinte cenário:
+- Carlos Souza (ativo): 2 células
+- Marcos Lima (ativo): 1 célula
+- Juliana Costa (inativa): 1 célula
 
 **Quando** o dashboard é carregado
 
 **Então** o sistema deve:
-  - Exibir o card "Total de Células Ativas" com o valor `8`
-  - Não contabilizar as 2 células de líderes inativos
+  - Exibir o card "Total de Células Ativas" com o valor `3`
+  - Não contabilizar a célula de Juliana Costa (inativa)
+
+---
+
+## Cenário 8: Clique no card de células navega para a listagem
+
+**Dado que** o dashboard está carregado com `3` células ativas
+
+**Quando** o usuário clica no card "Total de Células Ativas"
+
+**Então** o sistema deve:
+  - Navegar para a tela de listagem de células sem filtros pré-aplicados
 
 ---
 
@@ -259,6 +310,7 @@ No MVP, o perfil **Administrador** possui esta permissão por padrão.
 | Data       | Card | Autor           | Descrição da Alteração        |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Nome da igreja via variável de ambiente; fuso horário de Brasília (UTC-3) como premissa global; Cenário 4 corrigido (tooltip, não rótulos inline) |
 
 ---
 

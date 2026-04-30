@@ -2,7 +2,7 @@
 
 [Módulo: Membros](../../README.md) › **Listar Membros**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -22,7 +22,7 @@ Esta funcionalidade serve de hub de navegação para as demais operações sobre
 
 ## Acesso à Funcionalidade
 
-O usuário acessa a listagem pelo menu principal, na seção **Membros**. A tela carrega exibindo por padrão apenas membros com status **Ativo**.
+O usuário acessa a listagem pelo menu principal, na seção **Membros**. A tela carrega com o filtro de Status pré-aplicado como **Ativo** — ou seja, apenas membros com status Ativo são exibidos por padrão. O usuário pode alterar ou remover este filtro via filtro dinâmico.
 
 ## Estrutura da Listagem
 
@@ -32,7 +32,7 @@ O usuário acessa a listagem pelo menu principal, na seção **Membros**. A tela
 |--------|-----------|-----------|
 | **Nome** | Nome completo do membro | Sim |
 | **Telefone** | Celular no formato `(##) # ####-####` | Não |
-| **Discipulado por** | Nome do líder de célula ao qual o membro está vinculado | Sim |
+| **Discipulado por** | Nome do líder ao qual o membro está vinculado. A informação completa do vínculo (células, dias e horários do líder) está disponível na tela de Visualizar Membro. | Sim |
 | **Cidade** | Cidade do endereço residencial do membro | Sim |
 | **Status** | `Ativo` ou `Inativo` | Sim |
 
@@ -46,13 +46,11 @@ A listagem é paginada. O usuário pode selecionar a quantidade de registros exi
 
 A paginação exibe: número da página atual, total de páginas e total de registros encontrados.
 
-### Filtro por Status
-
-Por padrão, a listagem exibe apenas membros **Ativos**. Membros inativos não aparecem sem que o usuário aplique explicitamente um filtro de status.
-
 ## Filtro Dinâmico
 
-O filtro dinâmico permite ao usuário construir consultas compostas de forma livre. Cada filtro adicionado é composto por três elementos:
+O filtro dinâmico é o único mecanismo de filtragem da listagem. A tela carrega com o filtro **Status = Ativo** pré-aplicado. O usuário pode alterar, adicionar ou remover filtros livremente.
+
+Cada filtro adicionado é composto por três elementos:
 
 1. **Campo** — atributo pelo qual deseja filtrar
 2. **Condição** — lógica de comparação, condicionada ao tipo do campo
@@ -69,14 +67,14 @@ Múltiplos filtros podem ser combinados. A relação entre filtros é **E (AND)*
 | Discipulado por (líder) | Seleção | é igual a |
 | Cidade | Texto | contém, é igual a |
 | Bairro | Texto | contém, é igual a |
-| Dia da célula | Seleção | é igual a |
-| Horário da célula | Hora | é igual a, é depois de, é antes de |
+| Dia da célula | Seleção | é igual a (retorna apenas membros que são líderes de célula e possuem ao menos uma célula neste dia) |
+| Horário da célula | Hora | é igual a, é depois de, é antes de (retorna apenas membros que são líderes de célula e possuem ao menos uma célula neste horário) |
 | Tipo de ingresso | Seleção | é igual a |
 | Data de ingresso | Data | é igual a, é depois de, é antes de |
 | Data de nascimento | Data | é igual a, é depois de, é antes de |
-| Status | Seleção | é igual a |
+| Status | Seleção | é igual a (`Ativo` / `Inativo` / `Todos`) |
 
-O usuário pode adicionar quantos filtros quiser. Cada filtro pode ser removido individualmente. Há também um botão **"Limpar filtros"** que remove todos os filtros aplicados e retorna a listagem ao estado padrão (apenas ativos).
+O usuário pode adicionar quantos filtros quiser. Cada filtro pode ser removido individualmente. Há também um botão **"Limpar filtros"** que remove todos os filtros aplicados e restaura o filtro padrão (Status = Ativo).
 
 ### Comportamento da busca
 
@@ -104,6 +102,10 @@ Cada linha da tabela oferece acesso às ações disponíveis para o membro:
   - **Condição:** Os filtros aplicados não retornam nenhum registro
   - **Comportamento do sistema:** Exibe área vazia com mensagem e opção de limpar filtros
   - **Mensagem exibida:** "Nenhum resultado encontrado para os filtros aplicados."
+
+- **Listagem com Status "Todos"**
+  - **Condição:** Usuário aplica no filtro dinâmico: Status `é igual a` `Todos`
+  - **Comportamento do sistema:** Exibe membros ativos e inativos na mesma listagem; o badge de status de cada linha indica claramente `Ativo` ou `Inativo`
 
 - **Erro ao carregar**
   - **Condição:** Falha de comunicação ao buscar os dados
@@ -143,7 +145,9 @@ Cada linha da tabela oferece acesso às ações disponíveis para o membro:
 
 # Regras e Comportamentos do Sistema
 
-- O sistema deve exibir apenas membros com status **Ativo** no carregamento inicial da tela, sem qualquer filtro aplicado pelo usuário.
+- O sistema deve pré-aplicar o filtro Status = `Ativo` no carregamento inicial da tela. O usuário pode alterar ou remover este filtro via filtro dinâmico.
+
+- O campo Status no filtro dinâmico aceita os valores `Ativo`, `Inativo` e `Todos`. Ao selecionar `Todos`, o sistema exibe membros de qualquer status na mesma listagem.
 
 - O sistema deve aplicar todos os filtros ativos simultaneamente com relação **E (AND)** entre eles.
 
@@ -152,6 +156,8 @@ Cada linha da tabela oferece acesso às ações disponíveis para o membro:
 - O sistema deve preservar os filtros ativos ao navegar entre páginas da paginação.
 
 - O sistema deve exibir indicador visual claro na coluna que está sendo usada como critério de ordenação e a direção (crescente/decrescente).
+
+- O sistema deve reiniciar a paginação para a primeira página ao alterar a ordenação por coluna.
 
 - O sistema deve aplicar a máscara de telefone `(##) # ####-####` na exibição da coluna, independentemente do formato armazenado.
 
@@ -169,6 +175,7 @@ Cada linha da tabela oferece acesso às ações disponíveis para o membro:
 **Quando** acessa a tela de listagem de membros
 
 **Então** o sistema deve:
+  - Carregar com o filtro Status = Ativo pré-aplicado no filtro dinâmico
   - Exibir apenas os 80 membros com status Ativo
   - Ordenar por nome em ordem alfabética crescente
   - Exibir 50 registros na primeira página (padrão)
@@ -192,28 +199,27 @@ Cada linha da tabela oferece acesso às ações disponíveis para o membro:
 
 ---
 
-## Cenário 3: Filtro combinado (AND) por líder e dia da célula
+## Cenário 3: Filtro por dia da célula retorna líderes com célula naquele dia
 
-**Dado que** a listagem está carregada
-**E** existem 8 membros vinculados ao líder `Carlos Souza` que se reúnem na `Quarta-feira`
+**Dado que** existem 3 membros que são líderes de célula com ao menos uma célula na `Quarta-feira`
+**E** existem 20 membros que não são líderes
 
-**Quando** adiciona o filtro: Campo `Discipulado por` | Condição `é igual a` | Valor `Carlos Souza`
-**E** adiciona o filtro: Campo `Dia da célula` | Condição `é igual a` | Valor `Quarta-feira`
+**Quando** adiciona o filtro: Campo `Dia da célula` | Condição `é igual a` | Valor `Quarta-feira`
 **E** clica em "Aplicar"
 
 **Então** o sistema deve:
-  - Exibir apenas os 8 membros que satisfazem ambos os filtros simultaneamente
-  - Não exibir membros vinculados a Carlos Souza que se reúnem em outro dia
-  - Não exibir membros de outro líder que se reúnem na quarta-feira
+  - Exibir apenas os 3 membros-líderes que possuem ao menos uma célula na quarta-feira
+  - Não exibir membros que não são líderes de célula
+  - Não exibir líderes que não possuem célula na quarta-feira
 
 ---
 
 ## Cenário 4: Filtrar membros inativos
 
-**Dado que** a listagem está no estado padrão (apenas ativos visíveis)
+**Dado que** a listagem está no estado padrão (filtro Status = Ativo pré-aplicado)
 **E** existem 15 membros inativos
 
-**Quando** adiciona o filtro: Campo `Status` | Condição `é igual a` | Valor `Inativo`
+**Quando** altera o filtro de Status para `Inativo` no filtro dinâmico
 **E** clica em "Aplicar"
 
 **Então** o sistema deve:
@@ -230,7 +236,8 @@ Cada linha da tabela oferece acesso às ações disponíveis para o membro:
 **Quando** clica em "Limpar filtros"
 
 **Então** o sistema deve:
-  - Remover todos os filtros aplicados
+  - Remover todos os filtros aplicados pelo usuário
+  - Restaurar o filtro padrão: Status = Ativo
   - Exibir novamente todos os membros Ativos
   - Reiniciar a paginação para a página 1
 
@@ -245,12 +252,14 @@ Cada linha da tabela oferece acesso às ações disponíveis para o membro:
 **Então** o sistema deve:
   - Reordenar a listagem por Cidade em ordem crescente (A–Z)
   - Exibir indicador visual na coluna Cidade com seta para cima
+  - Reiniciar a paginação para a página 1
 
 **Quando** clica novamente no cabeçalho da coluna "Cidade"
 
 **Então** o sistema deve:
   - Reordenar por Cidade em ordem decrescente (Z–A)
   - Inverter o indicador visual para seta para baixo
+  - Reiniciar a paginação para a página 1
 
 ---
 
@@ -296,6 +305,8 @@ No MVP, o perfil **Administrador** possui esta permissão por padrão.
 | Data       | Card | Autor           | Descrição da Alteração        |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Consolidação de filtros: status removido como filtro fixo, integrado ao filtro dinâmico com valor padrão Ativo; nota na coluna Discipulado por; regra de paginação ao reordenar; versão 0.2 |
+| 30/04/2026 | —    | Thiago Oliveira | Semântica dos filtros Dia e Horário da célula explicitada: retornam membros cujo líder possui célula no dia/horário informado |
 
 ---
 

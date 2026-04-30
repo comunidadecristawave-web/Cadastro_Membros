@@ -2,7 +2,7 @@
 
 [Módulo: Membros](../../README.md) › **Inativar Membro**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.3 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -12,7 +12,7 @@ A inativação de membro registra formalmente o afastamento de uma pessoa da con
 
 Situações como mudança de cidade, desligamento voluntário ou simples perda de contato são comuns na dinâmica de uma igreja. Manter esses registros acessíveis — ainda que inativos — permite que a liderança acompanhe a evolução da base ao longo do tempo e eventualmente reintegre membros que retornem.
 
-Quando o membro a ser inativado é um líder de célula com membros vinculados, o sistema exige a redistribuição prévia desses membros antes de confirmar a inativação, garantindo que nenhum membro fique sem vínculo de liderança.
+Quando o membro a ser inativado é um líder de célula com membros **ativos** vinculados, o sistema exige a redistribuição prévia desses membros antes de confirmar a inativação, garantindo que nenhum membro ativo fique sem célula. Membros **inativos** vinculados ao líder mantêm o vínculo histórico e serão tratados individualmente no momento de cada reativação futura.
 
 A inativação é acessada a partir da listagem de membros ou da tela de visualização, e está disponível apenas para membros com status Ativo.
 
@@ -45,28 +45,32 @@ Quando o membro a ser inativado é um líder com membros ativos vinculados, o si
 O modal exibe:
 
 - Título: "Redistribuir membros de [Nome do líder]"
-- Mensagem: "Antes de inativar este líder, transfira todos os membros da sua célula para outros líderes."
+- Mensagem: "Antes de inativar este líder, transfira todos os membros ativos liderados por ele para outros líderes."
 - Lista de todos os membros **ativos** vinculados ao líder, cada um com:
   - Nome do membro
-  - Seletor de novo líder (busca/seleção entre líderes de célula ativos, excluindo o líder sendo inativado)
+  - Líder atual
+  - Seletor de novo líder (busca/seleção entre líderes ativos com flag de líder ativo, excluindo o líder sendo inativado)
 - Indicador de progresso: "X de Y redistribuídos"
-- Botão **"Confirmar redistribuição e inativar"** — habilitado somente quando todos os membros tiverem novo líder selecionado
+- Botão **"Confirmar redistribuição e inativar"** — habilitado somente quando todos os membros ativos tiverem nova célula selecionada
 - Botão **"Cancelar"** — fecha o modal sem realizar nenhuma alteração
 
-O administrador pode direcionar os membros para o mesmo líder ou para líderes diferentes.
+O administrador pode direcionar os membros para a mesma célula ou para células diferentes.
+
+**Membros inativos** vinculados ao líder **não aparecem no modal**. Eles mantêm o vínculo histórico e serão tratados na reativação individual futura.
 
 Ao confirmar:
-1. Todos os membros são transferidos para os novos líderes selecionados
+1. Todos os membros ativos listados são transferidos para os novos líderes selecionados
 2. O membro (ex-líder) é inativado
-3. O usuário recebe feedback de sucesso
+3. O flag `é líder de célula` e as células vinculadas são **preservados no banco de dados** em estado oculto — não são apagados. Ao reativar o membro, o flag e as células são restaurados automaticamente.
+4. O usuário recebe feedback de sucesso
 
 ## Estado após a inativação
 
 O membro passa a ter status **Inativo** e:
 - Deixa de aparecer na listagem padrão (que exibe apenas Ativos)
-- Não aparece como opção no seletor de líderes de célula
-- Tem seus dados preservados integralmente no banco de dados
-- Pode ser reativado a qualquer momento
+- Não aparece como opção no seletor de líderes
+- Tem seus dados (incluindo células e flag de líder) preservados integralmente no banco de dados
+- Pode ser reativado a qualquer momento, com restauração automática do flag e das células
 
 ---
 
@@ -79,6 +83,11 @@ O membro passa a ter status **Inativo** e:
 - **Modal de redistribuição bloqueante**
   - **Condição:** Membro é líder com membros ativos vinculados
   - **Mensagem exibida:** "Antes de inativar este líder, transfira todos os membros da sua célula para outros líderes."
+
+- **Sem líderes disponíveis para redistribuição**
+  - **Condição:** Não existe nenhuma outra célula ativa no sistema para receber os membros
+  - **Comportamento do sistema:** Bloqueia a inativação sem abrir o modal de redistribuição
+  - **Mensagem exibida:** "Não há outras células ativas disponíveis para redistribuição. Cadastre outro líder antes de inativar este."
 
 - **Botão desabilitado na redistribuição**
   - **Condição:** Nem todos os membros possuem novo líder selecionado
@@ -113,15 +122,19 @@ O membro passa a ter status **Inativo** e:
 
 - O sistema deve verificar se o membro é líder de célula com membros ativos vinculados antes de exibir qualquer modal.
 
-- O sistema deve bloquear a inativação direta de líderes com membros ativos vinculados, exigindo redistribuição prévia de todos eles.
+- O sistema deve bloquear a inativação direta de líderes com membros **ativos** vinculados em qualquer de suas células, exigindo redistribuição prévia de todos eles.
 
-- O sistema deve excluir o líder sendo inativado das opções de novo líder no seletor dentro do modal de redistribuição.
+- O sistema deve excluir o líder sendo inativado das opções no seletor de novo líder dentro do modal de redistribuição.
 
-- O sistema deve habilitar o botão "Confirmar redistribuição e inativar" somente após todos os membros listados receberem novo líder.
+- O sistema deve habilitar o botão "Confirmar redistribuição e inativar" somente após todos os membros ativos listados receberem nova célula selecionada.
+
+- O sistema **não deve** incluir membros inativos no modal de redistribuição. Membros inativos mantêm o vínculo histórico com o líder inativado.
 
 - O sistema deve efetivar a redistribuição e a inativação de forma atômica — ou tudo ocorre com sucesso, ou nenhuma alteração é persistida em caso de falha.
 
-- A inativação não deve excluir dados do membro — apenas alterar o campo de status para **Inativo**.
+- A inativação não deve excluir dados do membro — apenas alterar o campo de status para **Inativo**. O flag `é líder de célula` e as células vinculadas ao líder inativado são preservados no banco em estado oculto, para restauração automática em caso de reativação.
+
+- Quando não houver nenhuma outra célula ativa disponível para redistribuição (ex.: o líder sendo inativado é o único líder ativo do sistema), o sistema deve bloquear a inativação e exibir a mensagem: "Não há outras células ativas disponíveis para redistribuição. Cadastre outro líder antes de inativar este."
 
 - O sistema deve registrar data, hora e usuário responsável pela inativação para fins de auditoria.
 
@@ -182,6 +195,7 @@ O membro passa a ter status **Inativo** e:
 **Então** o sistema deve:
   - Transferir os 8 membros para os novos líderes selecionados
   - Inativar `Carlos Souza`
+  - Preservar no banco o flag de líder e as células de `Carlos Souza` (em estado oculto)
   - Exibir toast "Membro inativado com sucesso."
   - Remover `Carlos Souza` da listagem padrão
 
@@ -227,6 +241,9 @@ No MVP, o perfil **Administrador** possui esta permissão por padrão.
 | Data       | Card | Autor           | Descrição da Alteração        |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Redistribuição de ativos por célula específica; inativos mantêm vínculo histórico; suporte a múltiplas células por líder |
+| 30/04/2026 | —    | Thiago Oliveira | Ciclo de vida do líder: flag e células preservados em estado oculto ao inativar (restaurados na reativação); estado de erro sem líderes disponíveis |
+| 30/04/2026 | —    | Thiago Oliveira | Modal de redistribuição corrigido: seletor de "novo líder" (não nova célula); terminologia alinhada com vínculo membro→líder |
 
 ---
 

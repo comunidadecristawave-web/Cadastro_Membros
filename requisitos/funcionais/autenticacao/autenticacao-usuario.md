@@ -2,7 +2,7 @@
 
 [Módulo: Autenticação](../../README.md) › **Autenticação de Usuário**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -57,7 +57,7 @@ Não há bloqueio de conta por número de tentativas. Cada tentativa falha exibe
 
 ## Logout
 
-O logout é realizado exclusivamente pelo usuário, por meio de ação explícita no menu da aplicação. Ao confirmar o logout:
+O logout é realizado exclusivamente pelo usuário, por meio de ação explícita no menu da aplicação. A ação é executada diretamente, sem modal de confirmação:
 
 - A sessão é encerrada no servidor
 - O token/cookie de sessão é invalidado
@@ -116,6 +116,8 @@ O sistema não realiza logout automático por inatividade.
 - O sistema deve limpar o campo senha após uma tentativa de login inválida, mantendo o campo e-mail preenchido.
 
 - O sistema deve registrar o evento de login bem-sucedido e de logout (data, hora e identificador do usuário) para fins de auditoria.
+
+- O sistema deve emitir headers HTTP que impeçam o cache de páginas autenticadas (`Cache-Control: no-store`), garantindo que o botão Voltar do navegador não reacesse áreas autenticadas após o logout.
 
 ---
 
@@ -221,13 +223,12 @@ O sistema não realiza logout automático por inatividade.
 **Dado que** o usuário está autenticado e em qualquer tela da plataforma
 
 **Quando** clica na opção "Sair" no menu da aplicação
-**E** confirma a ação (se houver confirmação)
 
 **Então** o sistema deve:
   - Invalidar a sessão no servidor
   - Remover o cookie/token de sessão
   - Redirecionar para a tela de login
-  - Impedir que o botão "Voltar" do navegador reacesse a área autenticada
+  - Impedir que o botão "Voltar" do navegador reacesse a área autenticada (via header `Cache-Control: no-store` nas páginas autenticadas)
 
 ---
 
@@ -240,6 +241,23 @@ O sistema não realiza logout automático por inatividade.
 **Então** o sistema deve:
   - Redirecionar automaticamente para o Dashboard
   - Não exibir a tela de login
+
+---
+
+## Cenário 9: Login com usuário inativo
+
+**Dado que** existe um usuário com e-mail `secretaria@igrejabetania.com.br` e status **Inativo** no sistema
+
+**Quando** o usuário preenche o campo e-mail com `secretaria@igrejabetania.com.br`
+**E** preenche o campo senha com a senha correta
+**E** clica em "Entrar"
+
+**Então** o sistema deve:
+  - Recusar a autenticação
+  - Exibir a mesma mensagem "E-mail ou senha incorretos."
+  - Não revelar que a conta existe ou que está inativa
+  - Limpar o campo senha
+  - Manter o campo e-mail preenchido
 
 ---
 
@@ -256,6 +274,7 @@ Após autenticação bem-sucedida, o perfil **Administrador** tem acesso total a
 | Data       | Card | Autor           | Descrição da Alteração         |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Cenário 9 (usuário inativo); regra de cache header para botão Voltar; versão incrementada para 0.2 |
 
 ---
 

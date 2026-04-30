@@ -2,7 +2,7 @@
 
 [Módulo: Células](../../README.md) › **Listar Células**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -33,8 +33,11 @@ O usuário acessa a listagem pelo menu principal, na seção **Células**. A tel
 | **Líder** | Nome do membro que lidera a célula | Sim |
 | **Dia** | Dia da semana em que a célula se reúne | Sim |
 | **Horário** | Horário de início da célula | Sim |
+| **Tipos** | Tipos da célula (ex: "Adulto" ou "Adulto, Teens") | Não |
 | **Bairro / Cidade** | Bairro e cidade do endereço da célula | Sim |
-| **Membros ativos** | Quantidade de membros ativos vinculados à célula | Sim |
+| **Membros ativos** | Quantidade de membros ativos vinculados ao líder desta célula. Se o líder possuir múltiplas células, todas as linhas do líder exibem o mesmo total (todos os membros do líder). | Sim |
+
+Um líder com múltiplas células aparece em múltiplas linhas — uma linha por célula.
 
 A ordenação padrão é por **Líder** em ordem alfabética crescente (A–Z).
 
@@ -46,7 +49,7 @@ A listagem é paginada com opções de **10 / 50 / 100** registros por página. 
 
 ## Células Exibidas por Padrão
 
-Apenas células de líderes **Ativos** são exibidas no carregamento inicial. Células de líderes inativados ficam ocultas e não são acessíveis por esta listagem.
+Apenas células de líderes **Ativos** são exibidas no carregamento inicial. Células de líderes inativados ficam ocultas (preservadas no banco em estado oculto) e não são acessíveis por esta listagem em nenhuma condição no MVP — não há filtro de status de líder para visualizá-las. Elas são restauradas automaticamente quando o líder é reativado.
 
 ## Filtro Dinâmico
 
@@ -59,6 +62,7 @@ Segue o mesmo modelo da listagem de membros: o usuário escolhe um **campo**, um
 | Líder | Texto | contém, começa com, é igual a |
 | Dia | Seleção | é igual a |
 | Horário | Hora | é igual a, é depois de, é antes de |
+| Tipo | Seleção múltipla | contém (retorna células que possuam ao menos um dos tipos selecionados) |
 | Bairro | Texto | contém, é igual a |
 | Cidade | Texto | contém, é igual a |
 | Membros ativos | Número | é igual a, maior que, menor que |
@@ -106,7 +110,7 @@ Cada linha da tabela oferece acesso às ações disponíveis para a célula:
 ## Fluxos Relacionados
 
 - **[Listar Membros](../membros/listar-membros.md)**
-  O filtro de "Discipulado por" na listagem de membros complementa esta visão, permitindo ver os membros de uma célula específica.
+  O filtro de "Discipulado por" na listagem de membros complementa esta visão, permitindo ver todos os membros discipulados por determinado líder.
 
 ---
 
@@ -114,7 +118,7 @@ Cada linha da tabela oferece acesso às ações disponíveis para a célula:
 
 - O sistema deve exibir apenas células cujos líderes possuem status **Ativo**. Células de líderes inativos não aparecem na listagem.
 
-- O sistema deve calcular a coluna **Membros ativos** contando apenas membros com status Ativo vinculados ao respectivo líder; membros inativos não entram na contagem.
+- O sistema deve calcular a coluna **Membros ativos** contando apenas membros com status Ativo vinculados ao respectivo líder; membros inativos não entram na contagem. Se o líder possuir múltiplas células, todas as linhas do líder exibem o mesmo total de membros (o vínculo é membro→líder, não membro→célula específica).
 
 - O sistema deve aplicar todos os filtros ativos com relação **E (AND)** entre eles.
 
@@ -192,15 +196,17 @@ Cada linha da tabela oferece acesso às ações disponíveis para a célula:
 
 ---
 
-## Cenário 6: Coluna "Membros ativos" exclui membros inativos
+## Cenário 6: Coluna "Membros ativos" exclui membros inativos e reflete vínculo com líder
 
-**Dado que** a célula liderada por `Carlos Souza` possui 10 membros ativos e 3 inativos
+**Dado que** `Carlos Souza` possui 10 membros ativos e 3 inativos vinculados a ele como líder
+**E** `Carlos Souza` lidera 2 células (Quarta 19:30 e Sexta 20:00)
 
-**Quando** o usuário visualiza a linha de `Carlos Souza` na listagem
+**Quando** o usuário visualiza as linhas de `Carlos Souza` na listagem
 
 **Então** o sistema deve:
-  - Exibir `10` na coluna Membros ativos
+  - Exibir `10` na coluna Membros ativos em ambas as linhas do líder
   - Não contabilizar os 3 membros inativos
+  - Exibir as duas células em linhas separadas, ambas com o mesmo total de membros ativos
 
 ---
 
@@ -219,6 +225,8 @@ No MVP, o perfil **Administrador** possui esta permissão por padrão.
 | Data       | Card | Autor           | Descrição da Alteração        |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Coluna e filtro de tipos de célula; suporte a múltiplas células por líder (uma linha por célula) |
+| 30/04/2026 | —    | Thiago Oliveira | Membros ativos vinculados ao líder (não à célula específica); células inativas documentadas como ocultas (restauradas na reativação do líder) |
 
 ---
 

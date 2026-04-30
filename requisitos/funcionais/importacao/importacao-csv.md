@@ -2,7 +2,7 @@
 
 [Módulo: Importação](../../README.md) › **Importação de Base via CSV**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -26,34 +26,39 @@ O usuário acessa a importação pelo menu principal, em **Importação** ou equ
 
 ## Etapa 1 — Download do Template
 
-A tela oferece o botão **"Baixar template CSV"**. O arquivo baixado contém:
+A tela oferece o botão **"Baixar template CSV"**. O arquivo baixado é um único arquivo `.csv` com a seguinte estrutura:
 
-- **Aba "Template"**: cabeçalho com todas as colunas esperadas, sem dados, com cada coluna nomeada em linguagem clara (sem abreviações ou termos técnicos)
-- **Aba "Exemplo"**: mesma estrutura da aba Template, porém com **2 a 3 linhas de dados fictícios** preenchidas, sendo ao menos uma linha de líder de célula e uma linha de membro simples, para guiar o preenchimento
+- **Linhas de exemplo (primeiras linhas):** 2 a 3 linhas de dados fictícios precedem o cabeçalho. Cada linha de exemplo contém o texto `EXEMPLO` na primeira coluna, indicando visualmente que devem ser apagadas antes de preencher. Ao menos um exemplo de líder de célula (com múltiplas células, se aplicável) e um exemplo de membro simples são incluídos.
+- **Linha de cabeçalho:** segue imediatamente após os exemplos, com todas as colunas nomeadas em linguagem clara (sem abreviações ou termos técnicos).
+- **Linhas de dados:** o usuário preenche abaixo do cabeçalho após apagar os exemplos.
+
+O sistema ignora automaticamente linhas onde a primeira coluna contenha o texto `EXEMPLO` durante o processamento do upload.
 
 ### Colunas do template
 
-| Coluna | Obrigatório | Formato |
-|--------|-------------|---------|
-| Nome completo | Sim | Texto |
-| Telefone | Sim | `(##) # ####-####` ou apenas dígitos |
-| Data de nascimento | Sim | `DD/MM/AAAA` |
-| Data de ingresso | Sim | `DD/MM/AAAA` |
-| Tipo de ingresso | Sim | `Batismo` ou `Recepção` |
-| Rua | Sim | Texto |
-| Número | Sim | Texto |
-| Complemento | Não | Texto |
-| Bairro | Sim | Texto |
-| Cidade | Sim | Texto |
-| É líder de célula | Sim | `Sim` ou `Não` |
-| Dia da célula | Sim se líder | `Segunda` / `Terça` / `Quarta` / `Quinta` / `Sexta` / `Sábado` / `Domingo` |
-| Horário da célula | Sim se líder | `HH:MM` |
-| Endereço da célula — Rua | Sim se líder | Texto (ou `mesmo` para usar endereço residencial) |
-| Endereço da célula — Número | Sim se líder | Texto (ou `mesmo`) |
-| Endereço da célula — Complemento | Não | Texto |
-| Endereço da célula — Bairro | Sim se líder | Texto (ou `mesmo`) |
-| Endereço da célula — Cidade | Sim se líder | Texto (ou `mesmo`) |
-| Nome do líder (discipulado por) | Sim | Texto — deve corresponder a um nome presente no arquivo ou já cadastrado no sistema |
+| Coluna | Obrigatório | Formato | Observação |
+|--------|-------------|---------|------------|
+| Nome completo | Sim | Texto | — |
+| Telefone | Sim | `(##) # ####-####` ou apenas dígitos | Normalizado automaticamente |
+| Data de nascimento | Sim | `DD/MM/AAAA` | — |
+| Data de ingresso | Sim | `DD/MM/AAAA` | — |
+| Tipo de ingresso | Sim | `Batismo` ou `Recepção` | Normalizado automaticamente (case-insensitive, acento opcional) |
+| Rua | Sim | Texto | — |
+| Número | Sim | Texto | — |
+| Complemento | Não | Texto | — |
+| Bairro | Sim | Texto | — |
+| Cidade | Sim | Texto | — |
+| É líder de célula | Sim | `Sim` ou `Não` | Normalizado automaticamente (case-insensitive) |
+| Número da célula | Sim se líder | Número inteiro (`1`, `2`, `3`…) | Identifica qual célula do líder a linha descreve. Líderes com múltiplas células aparecem em múltiplas linhas com o mesmo número da célula diferente. |
+| Dia da célula | Sim se líder | `Segunda` / `Terça` / `Quarta` / `Quinta` / `Sexta` / `Sábado` / `Domingo` | Normalizado automaticamente |
+| Horário da célula | Sim se líder | `HH:MM` | — |
+| Tipos da célula | Sim se líder | `Kids`, `Teens`, `Adolescente`, `Adulto` (separados por vírgula se múltiplos) | Ex: `Adulto` ou `Adulto,Teens` |
+| Endereço da célula — Rua | Sim se líder | Texto (ou `mesmo` para usar endereço residencial) | — |
+| Endereço da célula — Número | Sim se líder | Texto (ou `mesmo`) | — |
+| Endereço da célula — Complemento | Não | Texto | — |
+| Endereço da célula — Bairro | Sim se líder | Texto (ou `mesmo`) | — |
+| Endereço da célula — Cidade | Sim se líder | Texto (ou `mesmo`) | — |
+| Nome do líder (discipulado por) | Sim | Texto | Deve corresponder a um nome presente no arquivo ou já cadastrado no sistema |
 
 ## Etapa 2 — Upload do Arquivo
 
@@ -82,7 +87,9 @@ Linhas inválidas são bloqueadas para importação: não podem ser selecionadas
 | Formato de data inválido | "Data de nascimento em formato inválido. Use DD/MM/AAAA." |
 | Tipo de ingresso inválido | "Tipo de ingresso deve ser 'Batismo' ou 'Recepção'." |
 | Líder referenciado não encontrado | "O líder '[nome]' não foi encontrado no arquivo nem no sistema." |
-| Campos de célula ausentes para líder | "Membro marcado como líder requer Dia, Horário e Endereço da célula." |
+| Nome de líder ambíguo | "Múltiplos líderes encontrados com o nome '[nome]'. Corrija o arquivo para que o nome do líder seja único." |
+| Campos de célula ausentes para líder | "Membro marcado como líder requer Dia, Horário, Tipos e Endereço da célula." |
+| Tipo de célula inválido | "Tipo de célula inválido: '[valor]'. Use Kids, Teens, Adolescente ou Adulto." |
 | Possível duplicata | "Possível duplicata: já existe um membro com o nome '[nome]' e data de nascimento '[data]' no sistema." |
 
 ### Resumo da prévia
@@ -106,8 +113,9 @@ Não há opção de editar linhas diretamente na prévia — correções devem s
 
 Ao confirmar, o sistema processa a importação das linhas válidas em duas passagens:
 
-1. **Primeira passagem:** processa e cadastra todos os membros marcados como **líderes de célula**
-2. **Segunda passagem:** processa os demais membros, vinculando-os aos líderes já cadastrados na primeira passagem ou aos líderes já existentes no sistema
+1. **Primeira passagem:** processa e cadastra todos os membros marcados como **líderes de célula**. Para líderes com múltiplas linhas (representando múltiplas células), o sistema cria **um único registro de membro** e associa **múltiplas células** a ele com base nas linhas agrupadas por nome + data de nascimento.
+
+2. **Segunda passagem:** processa os demais membros, vinculando-os ao líder identificado pelo campo "Nome do líder (discipulado por)", já cadastrado na primeira passagem ou já existente no sistema.
 
 Essa ordem elimina a dependência de sequência das linhas no arquivo: o usuário não precisa colocar os líderes antes dos membros.
 
@@ -166,9 +174,19 @@ O usuário pode baixar um relatório da importação (lista de erros) para usar 
 
 - O sistema deve processar líderes de célula antes dos membros simples, em duas passagens, eliminando a dependência de ordem das linhas no arquivo.
 
+- O sistema deve agrupar múltiplas linhas de um mesmo líder (mesmo nome + data de nascimento) em um único registro de membro com múltiplas células associadas durante a primeira passagem.
+
 - O sistema deve detectar possíveis duplicatas comparando **nome completo + data de nascimento** com registros já existentes no banco de dados. Duplicatas detectadas são sinalizadas como erro na prévia e não são importadas.
 
-- O sistema deve aplicar na importação as mesmas regras de validação do cadastro manual: campos obrigatórios, formatos de data, valores válidos de tipo de ingresso e dia da semana.
+- O sistema deve normalizar automaticamente os valores dos campos antes de validar: maiúsculas/minúsculas são ignoradas, acentos em campos de seleção são opcionais (ex: `batismo`, `BATISMO`, `Batismo` são todos aceitos; `Recepcao` é aceito como `Recepção`; `sim`/`SIM`/`Sim` são aceitos).
+
+- O sistema deve sinalizar erro quando o nome do líder referenciado corresponder a mais de um registro (no arquivo ou no sistema), exigindo que o usuário corrija o arquivo para que o nome do líder seja único.
+
+- O sistema deve detectar duplicatas **tanto** entre linhas do próprio arquivo **quanto** em relação ao banco de dados. A primeira ocorrência de um membro no arquivo é tratada como nova entrada; ocorrências subsequentes no mesmo arquivo com o mesmo nome completo e data de nascimento são sinalizadas como duplicata e bloqueadas para importação.
+
+- O sistema deve ignorar automaticamente as linhas de exemplo do template (identificadas pelo texto `EXEMPLO` na primeira coluna) sem sinalizá-las como erro.
+
+- O sistema deve aplicar na importação as mesmas regras de validação do cadastro manual: campos obrigatórios, formatos de data, valores válidos de tipo de ingresso, dia da semana e tipos de célula.
 
 - O sistema deve exibir linhas inválidas na prévia — nunca ocultá-las — com destaque visual e descrição clara e específica do erro por linha.
 
@@ -194,8 +212,9 @@ O usuário pode baixar um relatório da importação (lista de erros) para usar 
 
 **Então** o sistema deve:
   - Iniciar o download de um arquivo `.csv`
-  - O arquivo deve conter a aba "Template" com o cabeçalho e todas as colunas esperadas
-  - O arquivo deve conter a aba "Exemplo" com ao menos uma linha de líder e uma linha de membro preenchidas com dados fictícios
+  - O arquivo deve conter o cabeçalho com todas as colunas esperadas
+  - O arquivo deve conter ao menos 2 linhas de exemplo prefixadas com `EXEMPLO` na primeira coluna: uma para líder (com dados de célula preenchidos) e uma para membro simples
+  - O sistema deve ignorar automaticamente essas linhas de exemplo no processamento do upload
 
 ---
 
@@ -300,6 +319,20 @@ O usuário pode baixar um relatório da importação (lista de erros) para usar 
 
 ---
 
+## Cenário 9: Palavra-chave "mesmo" nos campos de endereço da célula copia o endereço residencial do líder
+
+**Dado que** o arquivo CSV contém um líder `Carlos Souza` com endereço residencial preenchido normalmente
+**E** nos campos "Endereço da célula — Rua", "Endereço da célula — Número", "Endereço da célula — Bairro" e "Endereço da célula — Cidade" está o valor `mesmo`
+
+**Quando** o sistema processa a linha durante a importação
+
+**Então** o sistema deve:
+  - Copiar automaticamente os valores do endereço residencial do líder para os campos de endereço da célula
+  - Tratar a linha como válida (não sinalizar erro nos campos de endereço da célula)
+  - Criar a célula com o endereço residencial do líder como endereço da célula
+
+---
+
 # Permissões e Regras de Acesso
 
 | Permissão | Descrição |
@@ -315,6 +348,8 @@ No MVP, o perfil **Administrador** possui esta permissão por padrão.
 | Data       | Card | Autor           | Descrição da Alteração        |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Cenário 1 corrigido (terminologia CSV, sem "abas"); mensagem de líder ambíguo sem menção a data de nascimento; regra de duplicata intra-arquivo; Cenário 9 (palavra-chave "mesmo" no endereço da célula) |
+| 30/04/2026 | —    | Thiago Oliveira | Coluna "Número da célula do líder" removida (vínculo membro→líder, não célula específica) |
 
 ---
 

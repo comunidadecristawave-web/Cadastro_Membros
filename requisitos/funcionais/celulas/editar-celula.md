@@ -2,7 +2,7 @@
 
 [Módulo: Células](../../README.md) › **Editar Célula**
 
-**Versão:** 0.1 | **Última atualização:** 29/04/2026
+**Versão:** 0.2 | **Última atualização:** 30/04/2026
 
 ---
 
@@ -38,6 +38,12 @@ O formulário apresenta os dados operacionais da célula pré-preenchidos com os
   - Tipo: hora
   - Obrigatório: sim
 
+- **Tipos da célula**
+  - Tipo: seleção múltipla (multi-select)
+  - Valores disponíveis: `Kids` / `Teens` / `Adolescente` / `Adulto`
+  - Obrigatório: sim (ao menos um tipo deve ser selecionado)
+  - Comportamento: os tipos atuais são pré-selecionados; o usuário pode adicionar ou remover tipos
+
 - **Endereço da célula**
   - Rua — obrigatório
   - Número — obrigatório
@@ -65,6 +71,11 @@ Não há modal de confirmação para esta operação — as alterações são sa
   - **Condição:** Usuário tenta salvar sem preencher um campo obrigatório
   - **Comportamento do sistema:** Impede o salvamento; destaca o campo
   - **Mensagem exibida:** "Preencha este campo."
+
+- **Tipo de célula não selecionado**
+  - **Condição:** Usuário tenta salvar sem selecionar ao menos um tipo
+  - **Comportamento do sistema:** Impede o salvamento; destaca o campo de tipos
+  - **Mensagem exibida:** "Selecione ao menos um tipo para esta célula."
 
 - **Célula atualizada com sucesso**
   - **Condição:** Alterações salvas com sucesso
@@ -97,13 +108,17 @@ Não há modal de confirmação para esta operação — as alterações são sa
 
 # Regras e Comportamentos do Sistema
 
-- O sistema deve permitir editar apenas os campos operacionais da célula: dia, horário e endereço.
+- O sistema deve permitir editar apenas os campos operacionais da célula: dia, horário, tipos e endereço.
 
 - O sistema não deve permitir a alteração do líder da célula por este formulário.
 
 - O sistema deve preencher automaticamente o endereço da célula com o endereço residencial atual do líder ao marcar a opção "Usar endereço residencial do líder", sem impactar o endereço residencial do membro-líder.
 
 - O sistema deve registrar data, hora e usuário responsável pela alteração para fins de auditoria.
+
+- A edição de dados operacionais da célula (dia, horário, tipos e endereço) não exige modal de confirmação — as alterações são aplicadas diretamente ao salvar. Os membros vinculados ao líder não recebem notificação automática sobre a mudança.
+
+- A opção "Usar endereço residencial do líder" realiza apenas o preenchimento inicial dos campos do endereço da célula. Após o preenchimento, o usuário pode editar os campos livremente sem impactar o endereço residencial do membro-líder. Não há sincronização em tempo real.
 
 ---
 
@@ -183,6 +198,8 @@ No MVP, o perfil **Administrador** possui esta permissão por padrão.
 | Data       | Card | Autor           | Descrição da Alteração        |
 |------------|------|-----------------|-------------------------------|
 | 29/04/2026 | —    | Thiago Oliveira | Criação inicial do requisito  |
+| 30/04/2026 | —    | Thiago Oliveira | Campo de tipos de célula (multi-select) adicionado; validação de tipo obrigatório |
+| 30/04/2026 | —    | Thiago Oliveira | Regra: sem modal de confirmação ao salvar; regra: endereço residencial do líder é preenchimento inicial apenas (sem sincronização em tempo real) |
 
 ---
 

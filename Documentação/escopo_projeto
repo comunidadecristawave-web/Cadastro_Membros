@@ -1,7 +1,7 @@
 # Escopo do projeto — Plataforma de gestão de membros
 
-**Versão:** 1.1  
-**Atualizado em:** Abril 2026  
+**Versão:** 1.2
+**Atualizado em:** Abril 2026
 **Status:** Em definição de stack tecnológica
 
 ---
@@ -93,7 +93,7 @@
 
 - 🟢 Os mesmos campos obrigatórios do cadastro manual se aplicam à importação. Linhas com campos obrigatórios ausentes são rejeitadas.
 - 🟢 Líderes de célula devem ser processados antes dos membros vinculados a eles. Estratégia recomendada: duas passagens no arquivo — primeira para líderes, segunda para membros — eliminando a dependência de ordem das linhas pelo usuário.
-- 🟢 A importação não permite duplicatas: membros com mesmo nome + telefone (ou identificador único a ser definido) são sinalizados como possível duplicata antes de serem inseridos.
+- 🟢 A importação não permite duplicatas: membros com mesmo **nome completo + data de nascimento** são sinalizados como possível duplicata e bloqueados antes de serem inseridos.
 - 🟡 O parâmetro de tipo de célula (masculina/feminina/mista) deve ser validado também durante a importação, rejeitando vínculos que quebrem a regra configurada. *(Mesma lógica de validação do cadastro manual.)*
 
 ---
@@ -102,9 +102,11 @@
 
 - 🟢 Uma célula é definida pelo seu líder + endereço + dia + horário. Não possui nome próprio.
 - 🟢 Um membro pertence a **exatamente uma** célula.
-- 🟢 Um líder pode liderar **mais de uma** célula.
+- 🟢 Um líder pode liderar **mais de uma** célula. Cada célula é um conjunto independente de (líder + dia + horário + endereço + tipos). Um membro é vinculado a uma célula específica, não apenas ao líder.
 - 🟢 O dia, horário e endereço de uma célula podem ser alterados pelo administrador.
-- 🟡 Parâmetro de configuração por instituição: tipo de célula permitida (masculina, feminina ou mista). O backend deve validar esse parâmetro no vínculo membro → célula para garantir conformidade. *(Configuração a ser exposta na interface administrativa no futuro.)*
+- 🟡 Parâmetro de configuração por instituição: tipo de célula por gênero (masculina, feminina ou mista). O backend deve prever o campo no modelo de dados, mas sem interface de configuração ou validação ativa no MVP. *(Configuração a ser exposta na interface administrativa no futuro.)*
+
+- 🟢 Tipos de célula por público-alvo: **Kids**, **Teens**, **Adolescente**, **Adulto**. Lista predefinida no sistema. Uma célula pode ter múltiplos tipos simultaneamente. Visível e filtrável na listagem e visualização de células. Campo obrigatório ao criar ou editar uma célula. Configuração via interface administrativa fora do escopo do MVP.
 
 ---
 
@@ -112,8 +114,8 @@
 
 ### 6.1 Dashboard
 
-- 🟢 Cards de métricas: total de membros ativos, total de células ativas, membros por célula, aniversariantes do mês.
-- 🟢 Gráfico de crescimento de membros por período: anual, semestral, trimestral e período personalizado via datepicker.
+- 🟢 Cards de métricas: total de membros ativos, total de células ativas (clicável → listagem de células), aniversariantes do mês.
+- 🟢 Gráfico de crescimento de membros por período: anual, semestral, trimestral e período personalizado via datepicker. Tooltip ao passar o cursor exibe total acumulado, novos ingressos e inativações do mês.
 
 ### 6.2 Listagem de membros
 
@@ -123,8 +125,8 @@
 
 ### 6.3 Organograma hierárquico
 
-- 🟢 Visualização em árvore: líder → membros vinculados. Clique no líder exibe os membros da célula.
-- 🟢 Exportável e imprimível.
+- 🟣 Visualização em árvore: líder → membros vinculados. Clique no líder exibe os membros da célula.
+- 🟣 Exportável e imprimível.
 
 ### 6.4 Relatórios específicos
 
@@ -146,7 +148,7 @@
 | P1 | Listagem com filtro dinâmico |
 | P1 | Dashboard com cards e gráfico de crescimento |
 | P1 | Importação de base via CSV (onboarding obrigatório) |
-| P2 | Organograma hierárquico (visual + exportação) |
+| P2 | Organograma hierárquico (visual + exportação) | *(movido de MVP para P2)* |
 | P2 | Exportação de listagem em PDF e Excel |
 | P2 | Relatório de células |
 | P2 | Relatório de aniversariantes |
@@ -165,4 +167,4 @@
 - 🟡 Exclusão permanente de dados não é permitida — apenas inativação de registros.
 - 🟡 Sistema de permissões (roles) deve ser extensível desde a primeira versão, mesmo com apenas o perfil administrador ativo no MVP.
 - 🟡 A importação CSV deve aplicar as mesmas regras de validação do cadastro manual, sem exceções.
-- 🟡 O identificador único de membro (usado para detecção de duplicatas na importação) deve ser definido junto à igreja antes da implantação — candidatos: telefone, CPF, ou combinação nome + data de nascimento.
+- 🟡 O identificador único de membro para detecção de duplicatas na importação e no cadastro manual é a combinação **nome completo + data de nascimento**.
