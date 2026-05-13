@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Membros - Cadastro de Membros</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/png" href="imagens/IMG_2261.PNG">
+  <style>
+    .membros-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    }
+
+    .membros-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--espaco-xl) var(--espaco-md);
+    }
+
+    .membros-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--espaco-xl);
+      flex-wrap: wrap;
+      gap: var(--espaco-md);
+    }
+
+    .membros-header h1 {
+      font-size: var(--fonte-tamanho-xl);
+      color: var(--cor-fundo-dark);
+    }
+
+    .btn-novo {
+      background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
+      color: var(--cor-fundo);
+      padding: var(--espaco-md);
+      border: none;
+      border-radius: var(--raio-md);
+      font-weight: var(--fonte-peso-semibold);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+      display: flex;
+      align-items: center;
+      gap: var(--espaco-sm);
+      text-decoration: none;
+      width: 100%;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .btn-novo svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .btn-novo:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--sombra-lg);
+    }
+
+    .filtros-container {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      margin-bottom: var(--espaco-lg);
+      box-shadow: none;
+      animation: none;
+    }
+
+    .filtros-busca-principal {
+      background: var(--cor-fundo);
+      padding: var(--espaco-lg) var(--espaco-xl);
+      border-radius: var(--raio-lg);
+      margin-bottom: var(--espaco-lg);
+      box-shadow: var(--sombra-md);
+      animation: slideUp 0.5s ease-out;
+    }
+
+    .filtro-busca-grande {
+      position: relative;
+      margin-bottom: var(--espaco-md);
+    }
+
+    .filtro-busca-grande label {
+      display: block;
+      font-weight: var(--fonte-peso-semibold);
+      margin-bottom: var(--espaco-sm);
+      color: var(--cor-fundo-dark);
+      font-size: var(--fonte-tamanho-base);
+    }
+
+    .filtro-busca-grande input {
+      width: 100%;
+      padding: var(--espaco-md) var(--espaco-md) var(--espaco-md) 40px;
+      border: 2px solid var(--cor-borda);
+      border-radius: var(--raio-md);
+      font-size: 15px;
+      font-family: var(--fonte-principal);
+      transition: all var(--transicao-rapida);
+    }
+
+    .filtro-busca-grande input:focus {
+      outline: none;
+      border-color: var(--cor-primaria);
+      box-shadow: 0 0 0 3px var(--cor-primaria-light);
+    }
+
+    .filtro-busca-grande svg {
+      position: absolute;
+      left: 14px;
+      top: 45px;
+      width: 18px;
+      height: 18px;
+      stroke: var(--cor-primaria);
+      fill: none;
+      stroke-width: 2;
+      pointer-events: none;
+    }
+
+    .filtros-grid {
+      display: none;
+    }
+
+    .filtros-layout {
+      display: block;
+      position: relative;
+    }
+
+    .filtros-sidebar {
+      position: fixed;
+      left: -100vw;
+      top: 0;
+      width: 100vw;
+      max-width: 100vw;
+      height: 100dvh;
+      background: var(--cor-fundo);
+      box-shadow: 4px 0 16px rgba(0, 0, 0, 0.15);
+      padding: var(--espaco-lg) var(--espaco-md);
+      overflow-y: auto;
+      z-index: 1000;
+      transition: left 0.3s ease-out;
+      border-radius: 0 0 var(--raio-lg) var(--raio-lg);
+      touch-action: pan-y;
+    }
+
+    .filtros-sidebar.aberto {
+      left: 0;
+    }
+
+    .btn-fechar-filtros {
+      position: absolute;
+      top: var(--espaco-lg);
+      right: var(--espaco-lg);
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--cor-fundo-dark);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .btn-fechar-filtros:hover {
+      opacity: 0.7;
+    }
+
+    .filtros-sidebar-titulo {
+      color: var(--cor-fundo-dark);
+      font-weight: var(--fonte-peso-semibold);
+      font-size: var(--fonte-tamanho-lg);
+      margin-bottom: var(--espaco-lg);
+      margin-top: var(--espaco-lg);
+    }
+
+    .overlay-filtros {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 999;
+    }
+
+    .overlay-filtros.ativo {
+      display: block;
+    }
+
+    .btn-toggle-filtros {
+      padding: var(--espaco-sm) var(--espaco-md);
+      background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
+      color: var(--cor-fundo);
+      border: none;
+      border-radius: var(--raio-md);
+      font-weight: var(--fonte-peso-semibold);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+      font-family: var(--fonte-principal);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--espaco-sm);
+      margin-bottom: var(--espaco-lg);
+    }
+
+    .btn-toggle-filtros:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--sombra-lg);
+    }
+
+    .btn-toggle-filtros svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .filtros-secao {
+      margin-bottom: var(--espaco-lg);
+    }
+
+    .filtros-secao:last-child {
+      margin-bottom: 0;
+    }
+
+    .filtros-secao-titulo {
+      font-weight: var(--fonte-peso-semibold);
+      color: var(--cor-fundo-dark);
+      margin-bottom: var(--espaco-md);
+      font-size: var(--fonte-tamanho-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cor-primaria);
+    }
+
+    .filtro-grupo {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: var(--espaco-md);
+    }
+
+    .filtro-grupo:last-child {
+      margin-bottom: 0;
+    }
+
+    .filtro-grupo label {
+      font-weight: var(--fonte-peso-medium);
+      margin-bottom: var(--espaco-xs);
+      color: var(--cor-texto);
+      font-size: var(--fonte-tamanho-sm);
+    }
+
+    .filtro-grupo input,
+    .filtro-grupo select {
+      padding: var(--espaco-sm) var(--espaco-md);
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--raio-md);
+      font-size: var(--fonte-tamanho-sm);
+      font-family: var(--fonte-principal);
+      transition: all var(--transicao-rapida);
+    }
+
+    .filtro-grupo input:focus,
+    .filtro-grupo select:focus {
+      outline: none;
+      border-color: var(--cor-primaria);
+      box-shadow: 0 0 0 2px var(--cor-primaria-light);
+    }
+
+    .filtros-botoes-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: var(--espaco-sm);
+      margin-top: var(--espaco-lg);
+      padding-top: var(--espaco-lg);
+      border-top: 1px solid var(--cor-borda);
+    }
+
+    .btn-filtrar {
+      padding: var(--espaco-md);
+      background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
+      color: var(--cor-fundo);
+      border: none;
+      border-radius: var(--raio-md);
+      font-weight: var(--fonte-peso-semibold);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+      font-family: var(--fonte-principal);
+      width: 100%;
+      font-size: 15px;
+    }
+
+    .btn-filtrar:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--sombra-lg);
+    }
+
+    .btn-limpar {
+      padding: var(--espaco-md);
+      background: var(--cor-fundo-alt);
+      color: var(--cor-texto);
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--raio-md);
+      font-weight: var(--fonte-peso-semibold);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+      font-family: var(--fonte-principal);
+      width: 100%;
+      font-size: 15px;
+    }
+
+    .btn-limpar:hover {
+      background: var(--cor-fundo);
+      border-color: var(--cor-primaria);
+      color: var(--cor-primaria);
+    }
+
+    .filtros-avancados {
+      display: none;
+    }
+
+    .btn-filtros-avancados {
+      display: none;
+    }
+
+    .filtro-busca input {
+      padding-left: 36px;
+    }
+
+    .filtro-grupo .filtro-busca input {
+      padding-left: 40px;
+    }
+
+    .status-chips {
+      display: flex;
+      gap: var(--espaco-sm);
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      padding: 7px 12px;
+      border: 1px solid var(--cor-borda);
+      background: var(--cor-fundo);
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: var(--fonte-peso-medium);
+      transition: all var(--transicao-rapida);
+    }
+
+    .status-chip.ativo {
+      border-color: var(--cor-primaria);
+      color: var(--cor-primaria-dark);
+      background: var(--cor-primaria-light);
+    }
+
+    .filtro-grupo {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filtro-grupo label {
+      font-weight: var(--fonte-peso-medium);
+      margin-bottom: var(--espaco-sm);
+      color: var(--cor-texto);
+      font-size: var(--fonte-tamanho-sm);
+    }
+
+    .filtro-grupo input,
+    .filtro-grupo select {
+      padding: var(--espaco-sm) var(--espaco-md);
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--raio-md);
+      font-size: var(--fonte-tamanho-sm);
+    }
+
+    .filtro-botoes {
+      display: flex;
+      gap: var(--espaco-sm);
+      align-items: center;
+    }
+
+    .btn-filtros-avancados {
+      padding: var(--espaco-sm) var(--espaco-md);
+      background: var(--cor-fundo);
+      color: var(--cor-primaria-dark);
+      border: 1px solid var(--cor-primaria-light);
+      border-radius: var(--raio-md);
+      font-weight: var(--fonte-peso-medium);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+      white-space: nowrap;
+    }
+
+    .btn-filtros-avancados:hover {
+      border-color: var(--cor-primaria);
+      background: var(--cor-primaria-light);
+    }
+
+    .btn-filtrar {
+      flex: 1;
+      padding: var(--espaco-sm) var(--espaco-md);
+      background: var(--cor-primaria);
+      color: var(--cor-fundo);
+      border: none;
+      border-radius: var(--raio-md);
+      font-weight: var(--fonte-peso-medium);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+    }
+
+    .btn-filtrar:hover {
+      background: var(--cor-primaria-dark);
+    }
+
+    .btn-limpar {
+      padding: var(--espaco-sm) var(--espaco-md);
+      background: var(--cor-fundo-alt);
+      color: var(--cor-texto);
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--raio-md);
+      font-weight: var(--fonte-peso-medium);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+    }
+
+    .btn-limpar:hover {
+      background: var(--cor-fundo);
+      border-color: var(--cor-primaria);
+    }
+
+    .contador-registros {
+      margin-top: var(--espaco-md);
+      font-size: 13px;
+      color: var(--cor-texto-light);
+    }
+
+    .tabela-container {
+      background: var(--cor-fundo);
+      border-radius: var(--raio-lg);
+      overflow: hidden;
+      box-shadow: var(--sombra-md);
+      animation: slideUp 0.5s ease-out;
+    }
+
+    .tabela-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tabela {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      min-width: 600px;
+    }
+
+    .col-nome { width: 22%; }
+    .col-email { width: 20%; }
+    .col-telefone { width: 15%; }
+    .col-lider { width: 18%; }
+    .col-status { width: 12%; text-align: center; }
+    .col-acoes { width: 13%; }
+
+    .tabela thead {
+      background: linear-gradient(135deg, var(--cor-fundo-dark) 0%, #2d2d2d 100%);
+      color: var(--cor-fundo);
+    }
+
+    .tabela th {
+      padding: var(--espaco-md);
+      text-align: left;
+      font-weight: var(--fonte-peso-semibold);
+      font-size: var(--fonte-tamanho-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tabela th.col-status {
+      text-align: center;
+    }
+
+    .tabela td {
+      padding: var(--espaco-md);
+      border-bottom: 1px solid var(--cor-borda);
+      vertical-align: middle;
+    }
+
+    .texto-elipse {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nome-cell strong {
+      font-size: 16px;
+    }
+
+    .tabela tbody tr {
+      transition: all var(--transicao-rapida);
+    }
+
+    .tabela tbody tr:hover {
+      background: var(--cor-fundo-alt);
+      transform: scale(1.01);
+      box-shadow: inset 4px 0 0 var(--cor-primaria);
+    }
+
+    .status-ativo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--espaco-xs) var(--espaco-md);
+      background: #d1fae5;
+      color: #065f46;
+      border-radius: var(--raio-md);
+      font-size: var(--fonte-tamanho-sm);
+      font-weight: var(--fonte-peso-semibold);
+      text-align: center;
+      min-width: 70px;
+    }
+
+    .status-inativo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--espaco-xs) var(--espaco-md);
+      background: #fee2e2;
+      color: #7f1d1d;
+      border-radius: var(--raio-md);
+      font-size: var(--fonte-tamanho-sm);
+      font-weight: var(--fonte-peso-semibold);
+      text-align: center;
+      min-width: 70px;
+    }
+
+    .tabela td.col-status {
+      text-align: center;
+    }
+
+    .acoes {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+
+    .btn-acao {
+      padding: 6px 8px;
+      border: none;
+      border-radius: var(--raio-md);
+      font-size: 12px;
+      font-weight: var(--fonte-peso-medium);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+      white-space: nowrap;
+    }
+
+    .btn-editar {
+      background: var(--cor-info);
+      color: var(--cor-fundo);
+    }
+
+    .btn-editar:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+
+    .btn-celula {
+      background: #4f46e5;
+      color: var(--cor-fundo);
+    }
+
+    .btn-celula:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+    }
+
+    .vazio {
+      text-align: center;
+      padding: var(--espaco-2xl);
+      color: var(--cor-texto-light);
+    }
+
+    .vazio-icon {
+      font-size: 48px;
+      margin-bottom: var(--espaco-md);
+    }
+
+    .loading-state {
+      display: none;
+      text-align: center;
+      padding: var(--espaco-2xl);
+    }
+
+    .paginacao {
+      display: flex;
+      justify-content: center;
+      gap: var(--espaco-sm);
+      margin-top: var(--espaco-lg);
+      padding: var(--espaco-lg) 0;
+      flex-wrap: wrap;
+    }
+
+    .paginacao a,
+    .paginacao span {
+      padding: var(--espaco-sm) var(--espaco-md);
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--raio-md);
+      cursor: pointer;
+      transition: all var(--transicao-rapida);
+      text-decoration: none;
+      color: var(--cor-texto);
+    }
+
+    .paginacao a:hover {
+      background: var(--cor-primaria-light);
+      border-color: var(--cor-primaria);
+      color: var(--cor-primaria);
+    }
+
+    .paginacao .ativa {
+      background: var(--cor-primaria);
+      color: var(--cor-fundo);
+      border-color: var(--cor-primaria);
+      font-weight: var(--fonte-peso-semibold);
+    }
+
+    .filtros-dinamicos-lista {
+      display: grid;
+      gap: var(--espaco-sm);
+    }
+
+    .filtro-dinamico-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: var(--espaco-sm);
+      align-items: center;
+    }
+
+    .filtro-dinamico-item select,
+    .filtro-dinamico-item input {
+      width: 100%;
+    }
+
+    .btn-remover-filtro {
+      border: 1px solid #fecaca;
+      background: #fff1f2;
+      color: #9f1239;
+      border-radius: var(--raio-md);
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: var(--fonte-peso-semibold);
+    }
+
+    .btn-adicionar-filtro {
+      margin-top: var(--espaco-sm);
+      width: 100%;
+      border: 1px dashed var(--cor-primaria);
+      color: var(--cor-primaria-dark);
+      background: var(--cor-fundo);
+      border-radius: var(--raio-md);
+      padding: var(--espaco-sm);
+      cursor: pointer;
+      font-weight: var(--fonte-peso-medium);
+    }
+
+    .filtro-dinamico-vazio {
+      font-size: var(--fonte-tamanho-sm);
+      color: var(--cor-texto-light);
+      font-style: italic;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2100;
+      padding: var(--espaco-md);
+    }
+
+    .modal-overlay.ativo {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(900px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: var(--raio-lg);
+      box-shadow: var(--sombra-lg);
+      padding: var(--espaco-lg);
+    }
+
+    .modal-card h3 {
+      margin-bottom: var(--espaco-sm);
+    }
+
+    .modal-card p {
+      color: var(--cor-texto-light);
+      margin-bottom: var(--espaco-md);
+    }
+
+    .redistribuicao-progresso {
+      font-weight: var(--fonte-peso-semibold);
+      margin-bottom: var(--espaco-sm);
+    }
+
+    .redistribuicao-lista {
+      display: grid;
+      gap: var(--espaco-sm);
+      margin-bottom: var(--espaco-md);
+    }
+
+    .redistribuicao-item {
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--raio-md);
+      padding: var(--espaco-sm);
+      background: #fff;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--espaco-sm);
+      align-items: center;
+    }
+
+    .modal-acoes {
+      display: flex;
+      gap: var(--espaco-sm);
+      justify-content: flex-end;
+      border-top: 1px solid var(--cor-borda);
+      padding-top: var(--espaco-md);
+    }
+
+    .modal-btn-secundario,
+    .modal-btn-primario {
+      border-radius: var(--raio-md);
+      border: none;
+      padding: var(--espaco-sm) var(--espaco-md);
+      font-weight: var(--fonte-peso-semibold);
+      cursor: pointer;
+    }
+
+    .modal-btn-secundario {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .modal-btn-primario {
+      background: var(--cor-primaria);
+      color: #fff;
+    }
+
+    .modal-btn-primario:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+
+
+    @media (max-width: 900px) {
+      .filtro-dinamico-item {
+        grid-template-columns: 1fr;
+      }
+
+      .redistribuicao-item {
+        grid-template-columns: 1fr;
+      }
+
+      .tabela {
+        min-width: 400px;
+        font-size: 13px;
+      }
+      .tabela th, .tabela td {
+        padding: var(--espaco-xs);
+        font-size: 13px;
+      }
+      .acoes {
+        flex-direction: column;
+        gap: var(--espaco-xs);
+      }
+      .btn-acao {
+        width: 100%;
+        font-size: 13px;
+        padding: var(--espaco-xs) var(--espaco-md);
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <a class="navbar-brand" href="/dashboard.html">WAVE</a>
+      <button class="navbar-hamburger" id="btnHamburger" aria-label="Abrir menu" style="display:none">
+        <svg width="28" height="28" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="navbar-menu" id="navbarMenu">
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/membros.html">Membros</a>
+        <a href="/importacao.html">Importar CSV</a>
+        <a href="/gerenciar-usuarios.html">Administração</a>
+      </div>
+      <div class="navbar-user">
+        <span id="nomeUsuario">Carregando...</span>
+        <button class="btn-logout">Sair</button>
+      </div>
+    </div>
+    <div class="navbar-mobile-overlay" id="navbarMobileOverlay" style="display:none">
+      <div class="navbar-mobile-menu">
+        <button class="navbar-mobile-close" id="btnCloseMobileMenu" aria-label="Fechar menu">✕</button>
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/membros.html">Membros</a>
+        <a href="/importacao.html">Importar CSV</a>
+        <a href="/gerenciar-usuarios.html">Administração</a>
+      </div>
+    </div>
+    <style>
+      @media (max-width: 900px) {
+        .navbar-menu {
+          display: none !important;
+        }
+        .navbar-hamburger {
+          display: block !important;
+          background: none;
+          border: none;
+          margin-left: auto;
+          cursor: pointer;
+          padding: 6px;
+        }
+        .navbar-mobile-overlay {
+          display: none;
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.7);
+          z-index: 2000;
+          align-items: flex-start;
+          justify-content: flex-end;
+        }
+        .navbar-mobile-overlay.ativo {
+          display: flex !important;
+        }
+        .navbar-mobile-menu {
+          background: var(--cor-fundo-dark);
+          color: var(--cor-fundo);
+          width: 220px;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          gap: var(--espaco-lg);
+          padding: var(--espaco-xl) var(--espaco-lg) var(--espaco-lg) var(--espaco-lg);
+          box-shadow: -2px 0 12px rgba(0,0,0,0.2);
+          position: relative;
+        }
+        .navbar-mobile-menu a {
+          color: var(--cor-fundo);
+          font-size: var(--fonte-tamanho-lg);
+          font-weight: var(--fonte-peso-semibold);
+          text-decoration: none;
+          padding: var(--espaco-md) 0;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .navbar-mobile-close {
+          position: absolute;
+          top: var(--espaco-md);
+          right: var(--espaco-md);
+          background: none;
+          border: none;
+          color: var(--cor-fundo);
+          font-size: 28px;
+          cursor: pointer;
+        }
+      }
+    </style>
+    <script>
+      // Menu hambúrguer mobile
+      const btnHamburger = document.getElementById('btnHamburger');
+      const navbarMobileOverlay = document.getElementById('navbarMobileOverlay');
+      const btnCloseMobileMenu = document.getElementById('btnCloseMobileMenu');
+      function abrirMenuMobile() {
+        navbarMobileOverlay.classList.add('ativo');
+        navbarMobileOverlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+      function fecharMenuMobile() {
+        navbarMobileOverlay.classList.remove('ativo');
+        navbarMobileOverlay.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+      btnHamburger.addEventListener('click', abrirMenuMobile);
+      btnCloseMobileMenu.addEventListener('click', fecharMenuMobile);
+      navbarMobileOverlay.addEventListener('click', function(e) {
+        if (e.target === navbarMobileOverlay) fecharMenuMobile();
+      });
+      // Mostrar botão só no mobile
+      function toggleHamburger() {
+        if (window.innerWidth <= 900) {
+          btnHamburger.style.display = 'block';
+        } else {
+          btnHamburger.style.display = 'none';
+          fecharMenuMobile();
+        }
+      }
+      window.addEventListener('resize', toggleHamburger);
+      toggleHamburger();
+    </script>
+  </nav>
+
+  <div class="membros-container">
+    <div class="membros-content">
+      <div class="membros-header">
+        <h1>Membros</h1>
+        <a href="/cadastro-membro.html" class="btn-novo">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Novo Membro
+        </a>
+      </div>
+
+      <!-- BUSCA PRINCIPAL -->
+      <div class="filtros-busca-principal">
+        <div class="filtro-busca-grande">
+          <label for="filtroNome">Buscar por Nome ou Telefone</label>
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="filtroNome" placeholder="Digite nome ou telefone...">
+        </div>
+      </div>
+
+      <!-- OVERLAY PARA FECHAR FILTROS -->
+      <div class="overlay-filtros" id="overlayFiltros"></div>
+
+      <!-- LAYOUT: SIDEBAR + CONTEÚDO -->
+      <div class="filtros-layout">
+        <!-- BOTÃO TOGGLE FILTROS -->
+        <button class="btn-toggle-filtros" id="btnToggleFiltros">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          Abrir Filtros
+        </button>
+
+        <!-- SIDEBAR DE FILTROS -->
+        <div class="filtros-sidebar" id="painelFiltros">
+          <button class="btn-fechar-filtros" id="btnFecharFiltros">✕</button>
+          <div class="filtros-sidebar-titulo">Filtros</div>
+          <div class="filtros-secao">
+            <div class="filtros-secao-titulo">Status</div>
+            <div class="filtro-grupo">
+              <select id="filtroStatus">
+                <option value="todos">Todos</option>
+                <option value="ativo">Ativos</option>
+                <option value="inativos">Inativos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filtros-secao">
+            <div class="filtros-secao-titulo">Filtros Dinamicos (AND)</div>
+            <div id="filtrosDinamicos" class="filtros-dinamicos-lista">
+              <div class="filtro-dinamico-vazio">Nenhum filtro dinâmico adicionado.</div>
+            </div>
+            <button type="button" class="btn-adicionar-filtro" id="btnAdicionarFiltroDinamico">+ Adicionar condição</button>
+          </div>
+
+          <div class="filtros-secao">
+            <div class="filtros-secao-titulo">Líder</div>
+            <div class="filtro-grupo">
+              <select id="filtroLider">
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filtros-secao">
+            <div class="filtros-secao-titulo">Categoria</div>
+            <div class="filtro-grupo">
+              <select id="filtroCategoria">
+                <option value="">Todas</option>
+                <option value="Kids">Kids</option>
+                <option value="Teens">Teens</option>
+                <option value="Adolescente">Adolescente</option>
+                <option value="Adulto">Adulto</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filtros-secao">
+            <div class="filtros-secao-titulo">Bairro</div>
+            <div class="filtro-grupo">
+              <input type="text" id="filtroBairro" placeholder="Ex: Centro">
+            </div>
+          </div>
+
+          <div class="filtros-secao">
+            <div class="filtros-secao-titulo">Ano de Nascimento</div>
+            <div class="filtro-grupo">
+              <input type="number" id="filtroAnoNascimento" placeholder="Ex: 1990" min="1900" max="2025">
+            </div>
+          </div>
+
+          <div class="filtros-secao">
+            <div class="filtros-secao-titulo">Itens por Página</div>
+            <div class="filtro-grupo">
+              <select id="filtroTamanho">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filtros-botoes-sidebar">
+            <button class="btn-filtrar" id="btnFiltrar">Aplicar Filtros</button>
+            <button class="btn-limpar" id="btnLimpar">Limpar Tudo</button>
+          </div>
+        </div>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div style="width: 100%;" id="conteudoPrincipal">
+          <div class="contador-registros" id="contadorRegistros">Sem resultados carregados.</div>
+
+          <!-- TABELA CONTAINER -->
+          <div class="tabela-container">
+        <div class="loading-state" id="carregando">
+          <div class="spinner"></div>
+          <p style="margin-top: var(--espaco-md); color: var(--cor-texto-light);">Carregando membros...</p>
+        </div>
+
+        <div class="tabela-wrapper" id="tabelaWrapper">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th class="col-nome">Nome</th>
+                <th class="col-email">Email</th>
+                <th class="col-telefone">Telefone</th>
+                <th class="col-lider">Líder</th>
+                <th class="col-status">Status</th>
+                <th class="col-acoes">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaMembros">
+              <tr>
+                <td colspan="6" class="vazio">
+                  <div class="vazio-icon">—</div>
+                  <p>Nenhum membro encontrado</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="vazio" id="vazio" style="display: none;">
+          <div class="vazio-icon">—</div>
+          <p>Nenhum membro encontrado com os filtros aplicados</p>
+        </div>
+
+        <div class="paginacao" id="paginacao"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfirmacaoInativacao">
+    <div class="modal-card">
+      <h3>Confirmar inativação</h3>
+      <p id="textoConfirmacaoInativacao">Tem certeza que deseja inativar este membro?</p>
+      <div class="modal-acoes">
+        <button type="button" class="modal-btn-secundario" id="btnCancelarInativacao">Cancelar</button>
+        <button type="button" class="modal-btn-primario" id="btnConfirmarInativacao">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalRedistribuicaoLider">
+    <div class="modal-card">
+      <h3 id="tituloRedistribuicao">Redistribuir membros</h3>
+      <p>Antes de inativar este líder, transfira todos os membros ativos liderados por ele para outros líderes.</p>
+      <div class="redistribuicao-progresso" id="progressoRedistribuicao">0 de 0 redistribuídos</div>
+      <div class="redistribuicao-lista" id="listaRedistribuicao"></div>
+      <div class="modal-acoes">
+        <button type="button" class="modal-btn-secundario" id="btnCancelarRedistribuicao">Cancelar</button>
+        <button type="button" class="modal-btn-primario" id="btnConfirmarRedistribuicao" disabled>Confirmar redistribuição e inativar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    if (!protegerRota()) throw new Error('Não autenticado');
+
+    let paginaAtual = 1;
+    let tamanho = 10;
+    let filtroSearch = '';
+    let filtroStatus = 'ativo';
+    let filtroLiderIdValor = '';
+    let filtroBairroValor = '';
+    let filtroCategoriaValor = '';
+    let filtroAnoNascimentoValor = '';
+    let debounceFiltroTimer;
+    let membrosFiltrados = [];
+    let membroPendenteInativacao = null;
+    let contextoRedistribuicao = null;
+    let contadorFiltroDinamico = 0;
+    const filtrosDinamicos = [];
+    const celulasPorLider = new Map();
+    const lideresMap = new Map();
+
+    const btnFiltrar = DOM.obter('#btnFiltrar');
+    const btnLimpar = DOM.obter('#btnLimpar');
+    const btnToggleFiltros = DOM.obter('#btnToggleFiltros');
+    const btnFecharFiltros = DOM.obter('#btnFecharFiltros');
+    const painelFiltros = DOM.obter('#painelFiltros');
+    const overlayFiltros = DOM.obter('#overlayFiltros');
+    const filtroNome = DOM.obter('#filtroNome');
+    const filtroStatusSelect = DOM.obter('#filtroStatus');
+    const filtroLider = DOM.obter('#filtroLider');
+    const filtroBairro = DOM.obter('#filtroBairro');
+    const filtroCategoria = DOM.obter('#filtroCategoria');
+    const filtroAnoNascimento = DOM.obter('#filtroAnoNascimento');
+    const filtroTamanho = DOM.obter('#filtroTamanho');
+    const carregando = DOM.obter('#carregando');
+    const tabelaWrapper = DOM.obter('#tabelaWrapper');
+    const tabelaMembros = DOM.obter('#tabelaMembros');
+    const paginacaoContainer = DOM.obter('#paginacao');
+    const contadorRegistros = DOM.obter('#contadorRegistros');
+    const filtrosDinamicosEl = DOM.obter('#filtrosDinamicos');
+    const btnAdicionarFiltroDinamico = DOM.obter('#btnAdicionarFiltroDinamico');
+    const modalConfirmacaoInativacao = DOM.obter('#modalConfirmacaoInativacao');
+    const textoConfirmacaoInativacao = DOM.obter('#textoConfirmacaoInativacao');
+    const btnCancelarInativacao = DOM.obter('#btnCancelarInativacao');
+    const btnConfirmarInativacao = DOM.obter('#btnConfirmarInativacao');
+    const modalRedistribuicaoLider = DOM.obter('#modalRedistribuicaoLider');
+    const tituloRedistribuicao = DOM.obter('#tituloRedistribuicao');
+    const progressoRedistribuicao = DOM.obter('#progressoRedistribuicao');
+    const listaRedistribuicao = DOM.obter('#listaRedistribuicao');
+    const btnCancelarRedistribuicao = DOM.obter('#btnCancelarRedistribuicao');
+    const btnConfirmarRedistribuicao = DOM.obter('#btnConfirmarRedistribuicao');
+
+    const CAMPOS_DINAMICOS = {
+      fullName: { label: 'Nome', tipo: 'texto' },
+      email: { label: 'E-mail', tipo: 'texto' },
+      phone: { label: 'Telefone', tipo: 'texto' },
+      addressNeighborhood: { label: 'Bairro', tipo: 'texto' },
+      category: { label: 'Categoria', tipo: 'texto' },
+      joinType: { label: 'Tipo de Ingresso', tipo: 'enum', opcoes: ['Conversão', 'Transferência', 'Reconciliação', 'Outro'] },
+      joinDate: { label: 'Data de Ingresso', tipo: 'data' },
+      birthDate: { label: 'Data de Nascimento', tipo: 'data' },
+      leaderId: { label: 'Líder', tipo: 'lider' },
+      isCellLeader: { label: 'É líder de célula', tipo: 'booleano' }
+    };
+
+    const OPERADORES_POR_TIPO = {
+      texto: [
+        { valor: 'contem', label: 'contém' },
+        { valor: 'igual', label: 'igual a' },
+        { valor: 'diferente', label: 'diferente de' }
+      ],
+      data: [
+        { valor: 'igual', label: 'igual a' },
+        { valor: 'antes', label: 'antes de' },
+        { valor: 'depois', label: 'depois de' }
+      ],
+      enum: [
+        { valor: 'igual', label: 'igual a' },
+        { valor: 'diferente', label: 'diferente de' }
+      ],
+      lider: [
+        { valor: 'igual', label: 'igual a' },
+        { valor: 'diferente', label: 'diferente de' }
+      ],
+      booleano: [
+        { valor: 'igual', label: 'igual a' }
+      ]
+    };
+
+    // CONTROLE DO PAINEL DE FILTROS DESLIZANTE
+    function abrirFiltros() {
+      painelFiltros.classList.add('aberto');
+      overlayFiltros.classList.add('ativo');
+      btnToggleFiltros.textContent = '✕ Fechar Filtros';
+    }
+
+    function fecharFiltros() {
+      painelFiltros.classList.remove('aberto');
+      overlayFiltros.classList.remove('ativo');
+      btnToggleFiltros.textContent = '☰ Abrir Filtros';
+    }
+
+    btnToggleFiltros.addEventListener('click', () => {
+      if (painelFiltros.classList.contains('aberto')) {
+        fecharFiltros();
+      } else {
+        abrirFiltros();
+      }
+    });
+
+    btnFecharFiltros.addEventListener('click', fecharFiltros);
+    overlayFiltros.addEventListener('click', fecharFiltros);
+
+    function mostrarCarregando() {
+      carregando.style.display = 'block';
+      tabelaWrapper.style.display = 'none';
+    }
+
+    function mostrarTabela() {
+      carregando.style.display = 'none';
+      tabelaWrapper.style.display = 'block';
+    }
+
+    function normalizarTexto(valor) {
+      return (valor || '')
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function obterTipoCampo(campo) {
+      return CAMPOS_DINAMICOS[campo]?.tipo || 'texto';
+    }
+
+    function valorCampoMembro(membro, campo) {
+      if (campo === 'leaderId') {
+        return membro.leaderId || membro.leader?.id || '';
+      }
+      return membro[campo];
+    }
+
+    function compararRegra(tipo, operador, valorMembro, valorFiltro) {
+      if (tipo === 'booleano') {
+        return Boolean(valorMembro) === (valorFiltro === 'true');
+      }
+
+      if (tipo === 'data') {
+        const base = (valorMembro || '').slice(0, 10);
+        const filtro = (valorFiltro || '').slice(0, 10);
+        if (!base || !filtro) return false;
+        if (operador === 'igual') return base === filtro;
+        if (operador === 'antes') return base < filtro;
+        return base > filtro;
+      }
+
+      const textoMembro = normalizarTexto(valorMembro);
+      const textoFiltro = normalizarTexto(valorFiltro);
+
+      if (!textoFiltro) return true;
+      if (operador === 'igual') return textoMembro === textoFiltro;
+      if (operador === 'diferente') return textoMembro !== textoFiltro;
+      return textoMembro.includes(textoFiltro);
+    }
+
+    function aplicarFiltrosDinamicosLista(lista) {
+      const regrasValidas = filtrosDinamicos.filter(regra => regra.campo && regra.operador && regra.valor !== '');
+      if (!regrasValidas.length) return lista;
+
+      return lista.filter(membro => regrasValidas.every(regra => {
+        const tipo = obterTipoCampo(regra.campo);
+        const valorMembro = valorCampoMembro(membro, regra.campo);
+        return compararRegra(tipo, regra.operador, valorMembro, regra.valor);
+      }));
+    }
+
+    function renderizarFiltrosDinamicos() {
+      DOM.limpar(filtrosDinamicosEl);
+
+      if (!filtrosDinamicos.length) {
+        filtrosDinamicosEl.innerHTML = '<div class="filtro-dinamico-vazio">Nenhum filtro dinâmico adicionado.</div>';
+        return;
+      }
+
+      filtrosDinamicos.forEach(regra => {
+        const linha = DOM.criar('div', { className: 'filtro-dinamico-item' });
+
+        const campoSelect = DOM.criar('select');
+        campoSelect.innerHTML = Object.entries(CAMPOS_DINAMICOS)
+          .map(([valor, meta]) => `<option value="${valor}" ${valor === regra.campo ? 'selected' : ''}>${meta.label}</option>`)
+          .join('');
+
+        const operadorSelect = DOM.criar('select');
+
+        const valorWrap = DOM.criar('div');
+        valorWrap.style.width = '100%';
+
+        const btnRemover = DOM.criar('button', { type: 'button', className: 'btn-remover-filtro' }, 'Remover');
+
+        function montarOperadores() {
+          const tipo = obterTipoCampo(regra.campo);
+          const ops = OPERADORES_POR_TIPO[tipo] || OPERADORES_POR_TIPO.texto;
+          operadorSelect.innerHTML = ops
+            .map(op => `<option value="${op.valor}" ${op.valor === regra.operador ? 'selected' : ''}>${op.label}</option>`)
+            .join('');
+
+          if (!ops.some(op => op.valor === regra.operador)) {
+            regra.operador = ops[0].valor;
+            operadorSelect.value = regra.operador;
+          }
+        }
+
+        function montarCampoValor() {
+          DOM.limpar(valorWrap);
+          const tipo = obterTipoCampo(regra.campo);
+
+          if (tipo === 'enum') {
+            const select = DOM.criar('select');
+            const opcoes = CAMPOS_DINAMICOS[regra.campo].opcoes || [];
+            select.innerHTML = `<option value="">Selecione</option>${opcoes.map(op => `<option value="${op}" ${op === regra.valor ? 'selected' : ''}>${op}</option>`).join('')}`;
+            select.addEventListener('change', () => {
+              regra.valor = select.value;
+              aplicarFiltrosDinamicos();
+            });
+            valorWrap.appendChild(select);
+            return;
+          }
+
+          if (tipo === 'lider') {
+            const select = DOM.criar('select');
+            select.innerHTML = `<option value="">Selecione</option>${Array.from(lideresMap.values()).map(l => `<option value="${l.id}" ${l.id === regra.valor ? 'selected' : ''}>${l.fullName}</option>`).join('')}`;
+            select.addEventListener('change', () => {
+              regra.valor = select.value;
+              aplicarFiltrosDinamicos();
+            });
+            valorWrap.appendChild(select);
+            return;
+          }
+
+          if (tipo === 'booleano') {
+            const select = DOM.criar('select');
+            select.innerHTML = `
+              <option value="">Selecione</option>
+              <option value="true" ${regra.valor === 'true' ? 'selected' : ''}>Sim</option>
+              <option value="false" ${regra.valor === 'false' ? 'selected' : ''}>Não</option>
+            `;
+            select.addEventListener('change', () => {
+              regra.valor = select.value;
+              aplicarFiltrosDinamicos();
+            });
+            valorWrap.appendChild(select);
+            return;
+          }
+
+          const input = DOM.criar('input', { type: tipo === 'data' ? 'date' : 'text', value: regra.valor || '' });
+          input.addEventListener('input', () => {
+            regra.valor = input.value;
+            aplicarFiltrosDinamicos();
+          });
+          valorWrap.appendChild(input);
+        }
+
+        campoSelect.addEventListener('change', () => {
+          regra.campo = campoSelect.value;
+          regra.valor = '';
+          montarOperadores();
+          montarCampoValor();
+          aplicarFiltrosDinamicos();
+        });
+
+        operadorSelect.addEventListener('change', () => {
+          regra.operador = operadorSelect.value;
+          aplicarFiltrosDinamicos();
+        });
+
+        btnRemover.addEventListener('click', () => {
+          const idx = filtrosDinamicos.findIndex(x => x.id === regra.id);
+          if (idx >= 0) filtrosDinamicos.splice(idx, 1);
+          renderizarFiltrosDinamicos();
+          aplicarFiltrosDinamicos();
+        });
+
+        montarOperadores();
+        montarCampoValor();
+
+        linha.appendChild(campoSelect);
+        linha.appendChild(operadorSelect);
+        linha.appendChild(valorWrap);
+        linha.appendChild(btnRemover);
+        filtrosDinamicosEl.appendChild(linha);
+      });
+    }
+
+    function adicionarFiltroDinamico() {
+      contadorFiltroDinamico += 1;
+      filtrosDinamicos.push({
+        id: `fd-${contadorFiltroDinamico}`,
+        campo: 'category',
+        operador: 'contem',
+        valor: ''
+      });
+      renderizarFiltrosDinamicos();
+    }
+
+    function aplicarFiltrosDinamicos() {
+      clearTimeout(debounceFiltroTimer);
+      debounceFiltroTimer = setTimeout(() => {
+        filtroSearch = filtroNome.value.trim();
+        filtroStatus = filtroStatusSelect.value;
+        filtroLiderIdValor = filtroLider.value;
+        filtroBairroValor = filtroBairro.value.trim();
+        filtroCategoriaValor = filtroCategoria.value;
+        filtroAnoNascimentoValor = filtroAnoNascimento.value;
+        tamanho = parseInt(filtroTamanho.value);
+        paginaAtual = 1;
+        carregarMembros();
+      }, 260);
+    }
+
+    btnAdicionarFiltroDinamico.addEventListener('click', () => {
+      adicionarFiltroDinamico();
+    });
+
+    btnFiltrar.addEventListener('click', () => {
+      aplicarFiltrosDinamicos();
+    });
+
+    btnLimpar.addEventListener('click', () => {
+      filtroNome.value = '';
+      filtroLider.value = '';
+      filtroBairro.value = '';
+      filtroCategoria.value = '';
+      filtroAnoNascimento.value = '';
+      filtroStatusSelect.value = 'ativo';
+      filtroTamanho.value = '10';
+      filtroSearch = '';
+      filtroLiderIdValor = '';
+      filtroBairroValor = '';
+      filtroCategoriaValor = '';
+      filtroAnoNascimentoValor = '';
+      filtroStatus = 'ativo';
+      tamanho = 10;
+      filtrosDinamicos.length = 0;
+      renderizarFiltrosDinamicos();
+      paginaAtual = 1;
+      carregarMembros();
+    });
+
+    [
+      filtroNome,
+      filtroStatusSelect,
+      filtroLider,
+      filtroBairro,
+      filtroCategoria,
+      filtroAnoNascimento,
+      filtroTamanho
+    ].forEach(el => {
+      el.addEventListener('input', aplicarFiltrosDinamicos);
+      el.addEventListener('change', aplicarFiltrosDinamicos);
+    });
+
+    async function carregarFiltrosRelacionados() {
+      try {
+        const [lideresResp, celulasResp] = await Promise.all([
+          LideresApi.listar(1, 200),
+          CelulasApi.listar(1, 300)
+        ]);
+
+        (lideresResp.items || []).forEach(lider => {
+          lideresMap.set(lider.id, lider);
+          filtroLider.appendChild(DOM.criar('option', { value: lider.id }, lider.fullName));
+        });
+
+        (celulasResp.items || []).forEach(celula => {
+          const liderCelulaId = celula.leaderId || celula.leader?.id;
+          if (!liderCelulaId) return;
+
+          if (!celulasPorLider.has(liderCelulaId)) {
+            celulasPorLider.set(liderCelulaId, []);
+          }
+          celulasPorLider.get(liderCelulaId).push(celula);
+        });
+
+        renderizarFiltrosDinamicos();
+      } catch (erro) {
+        console.error('Erro ao carregar filtros relacionados', erro);
+      }
+    }
+
+    function renderizarTabelaPaginada() {
+      DOM.limpar(tabelaMembros);
+
+      const totalItems = membrosFiltrados.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / tamanho));
+      const paginaSegura = Math.min(Math.max(1, paginaAtual), totalPages);
+      paginaAtual = paginaSegura;
+      const inicio = (paginaAtual - 1) * tamanho;
+      const paginaItens = membrosFiltrados.slice(inicio, inicio + tamanho);
+
+      if (!paginaItens.length) {
+        tabelaMembros.innerHTML = `
+          <tr>
+            <td colspan="6" class="vazio">
+                <div class="vazio-icon">—</div>
+              <p>Nenhum membro encontrado</p>
+            </td>
+          </tr>
+        `;
+      } else {
+        const obterNomeLider = (membro) => {
+          if (membro.leader?.fullName) return membro.leader.fullName;
+          if (!membro.leaderId) return '—';
+          const lider = lideresMap.get(membro.leaderId);
+          if (lider?.fullName) return lider.fullName;
+          const option = Array.from(filtroLider.options).find(x => x.value === membro.leaderId);
+          return option?.textContent || '—';
+        };
+
+        const formatarTelefone = (telefone) => {
+          if (!telefone) return '—';
+          const apenasNumeros = telefone.replace(/\D/g, '');
+          if (apenasNumeros.length !== 11) return telefone;
+          return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 7)}-${apenasNumeros.slice(7)}`;
+        };
+
+        paginaItens.forEach(membro => {
+          const celulasLideradas = celulasPorLider.get(membro.id) || [];
+          const acoesAtivo = membro.isActive
+            ? `<button class="btn-acao btn-editar" onclick="editarMembro('${membro.id}')">Editar</button>
+               <button class="btn-acao btn-celula" onclick="prepararInativacao('${membro.id}')">Inativar</button>`
+            : `<button class="btn-acao btn-editar" onclick="editarMembro('${membro.id}')">Editar</button>
+               <button class="btn-acao btn-celula" onclick="reativarMembro('${membro.id}')">Reativar</button>`;
+
+          const row = DOM.criar('tr', {}, `
+            <td class="nome-cell" title="${membro.fullName || ''}"><strong class="texto-elipse">${membro.fullName || '—'}</strong></td>
+            <td title="${membro.email || ''}"><span class="texto-elipse">${membro.email || '—'}</span></td>
+            <td title="${membro.phone || ''}"><span class="texto-elipse">${formatarTelefone(membro.phone)}</span></td>
+            <td title="${obterNomeLider(membro)}"><span class="texto-elipse">${obterNomeLider(membro)}</span></td>
+            <td>${membro.isActive ? '<span class="status-ativo">Ativo</span>' : '<span class="status-inativo">Inativo</span>'}</td>
+            <td>
+              <div class="acoes">
+                ${acoesAtivo}
+                ${celulasLideradas.length > 0 ? `<button class="btn-acao btn-editar" onclick="visualizarCelulaDoMembro('${membro.id}')">Ver Célula</button>` : ''}
+              </div>
+            </td>
+          `);
+          tabelaMembros.appendChild(row);
+        });
+      }
+
+      mostrarTabela();
+      contadorRegistros.textContent = `Exibindo ${Math.min(tamanho, Math.max(0, totalItems - (paginaAtual - 1) * tamanho))} de ${totalItems} membros.`;
+
+      if (totalPages > 1) {
+        Paginacao.renderizar(paginaAtual, totalPages, (novaPagina) => {
+          paginaAtual = novaPagina;
+          renderizarTabelaPaginada();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      } else {
+        DOM.limpar(paginacaoContainer);
+      }
+    }
+
+    async function carregarMembros() {
+      try {
+        mostrarCarregando();
+
+        const filtroApi = { search: filtroSearch };
+        if (filtroStatus === 'ativo') filtroApi.onlyActive = true;
+        if (filtroStatus === 'inativos') filtroApi.onlyActive = false;
+        if (filtroLiderIdValor) filtroApi.leaderId = filtroLiderIdValor;
+        if (filtroBairroValor) filtroApi.neighborhood = filtroBairroValor;
+        if (filtroCategoriaValor) filtroApi.category = filtroCategoriaValor;
+        if (filtroAnoNascimentoValor) {
+          const ano = parseInt(filtroAnoNascimentoValor);
+          filtroApi.birthDateFrom = `${ano}-01-01`;
+          filtroApi.birthDateTo = `${ano}-12-31`;
+        }
+
+        delete filtroApi.onlyActive;
+        if (filtroStatus === 'ativo') filtroApi.onlyActive = true;
+        if (filtroStatus === 'inativos') filtroApi.onlyActive = false;
+
+        const resposta = await MembrosApi.listar(1, 1000, filtroApi);
+        let itens = resposta.items || [];
+
+        if (filtroStatus === 'todos') {
+          const respostaTodos = await MembrosApi.listar(1, 1000, { ...filtroApi, onlyActive: undefined });
+          itens = respostaTodos.items || [];
+        }
+
+        membrosFiltrados = aplicarFiltrosDinamicosLista(itens);
+        renderizarTabelaPaginada();
+      } catch (erro) {
+        console.error('Erro:', erro);
+        Notificacao.erro('Erro ao carregar membros');
+        carregando.style.display = 'none';
+        tabelaWrapper.style.display = 'block';
+        contadorRegistros.textContent = 'Falha ao carregar membros.';
+      }
+    }
+
+    async function obterMembrosBase() {
+      const resp = await MembrosApi.listar(1, 1000, {});
+      return resp.items || [];
+    }
+
+    function abrirModal(modal) {
+      modal.classList.add('ativo');
+    }
+
+    function fecharModal(modal) {
+      modal.classList.remove('ativo');
+    }
+
+    function atualizarProgressoRedistribuicao() {
+      if (!contextoRedistribuicao) return;
+
+      const total = contextoRedistribuicao.membrosVinculados.length;
+      const preenchidos = contextoRedistribuicao.membrosVinculados.filter(m => contextoRedistribuicao.novosLideres[m.id]).length;
+      progressoRedistribuicao.textContent = `${preenchidos} de ${total} redistribuídos`;
+      btnConfirmarRedistribuicao.disabled = preenchidos !== total;
+    }
+
+    function renderizarModalRedistribuicao() {
+      if (!contextoRedistribuicao) return;
+
+      tituloRedistribuicao.textContent = `Redistribuir membros de ${contextoRedistribuicao.lider.fullName}`;
+      DOM.limpar(listaRedistribuicao);
+
+      contextoRedistribuicao.membrosVinculados.forEach(membro => {
+        const item = DOM.criar('div', { className: 'redistribuicao-item' });
+        const info = DOM.criar('div', {}, `
+          <strong>${membro.fullName}</strong>
+          <div style="font-size:12px;color:#64748b;">Líder atual: ${contextoRedistribuicao.lider.fullName}</div>
+        `);
+
+        const seletor = DOM.criar('select');
+        seletor.innerHTML = '<option value="">Selecione novo líder</option>' + contextoRedistribuicao.lideresAlternativos
+          .map(l => `<option value="${l.id}">${l.fullName}</option>`)
+          .join('');
+        seletor.value = contextoRedistribuicao.novosLideres[membro.id] || '';
+        seletor.addEventListener('change', () => {
+          contextoRedistribuicao.novosLideres[membro.id] = seletor.value;
+          atualizarProgressoRedistribuicao();
+        });
+
+        item.appendChild(info);
+        item.appendChild(seletor);
+        listaRedistribuicao.appendChild(item);
+      });
+
+      atualizarProgressoRedistribuicao();
+      abrirModal(modalRedistribuicaoLider);
+    }
+
+    async function prepararInativacao(id) {
+      try {
+        const membrosTodos = await obterMembrosBase();
+        const membro = membrosTodos.find(m => m.id === id);
+
+        if (!membro || !membro.isActive) {
+          Notificacao.aviso('Membro já está inativo.');
+          return;
+        }
+
+        const membrosVinculados = membrosTodos.filter(m => m.isActive && m.leaderId === membro.id);
+
+        if (!membrosVinculados.length) {
+          membroPendenteInativacao = membro;
+          textoConfirmacaoInativacao.textContent = `Tem certeza que deseja inativar ${membro.fullName}? Esta ação pode ser desfeita a qualquer momento.`;
+          abrirModal(modalConfirmacaoInativacao);
+          return;
+        }
+
+        const lideresAlternativos = membrosTodos
+          .filter(m => m.isActive && m.isCellLeader && m.id !== membro.id)
+          .map(m => ({ id: m.id, fullName: m.fullName }));
+
+        if (!lideresAlternativos.length) {
+          Notificacao.erro('Não há outras células ativas disponíveis para redistribuição. Cadastre outro líder antes de inativar este.');
+          return;
+        }
+
+        contextoRedistribuicao = {
+          lider: membro,
+          membrosVinculados,
+          lideresAlternativos,
+          novosLideres: {}
+        };
+
+        renderizarModalRedistribuicao();
+      } catch (erro) {
+        console.error('Falha ao preparar inativação', erro);
+        Notificacao.erro('Não foi possível preparar a inativação deste membro.');
+      }
+    }
+
+    async function confirmarInativacaoSimples() {
+      if (!membroPendenteInativacao) return;
+
+      try {
+        await MembrosApi.inativar(membroPendenteInativacao.id);
+        fecharModal(modalConfirmacaoInativacao);
+        membroPendenteInativacao = null;
+        Notificacao.sucesso('Membro inativado com sucesso.');
+        carregarMembros();
+      } catch (erro) {
+        console.error('Erro ao inativar membro', erro);
+        Notificacao.erro('Falha ao inativar membro.');
+      }
+    }
+
+    async function confirmarRedistribuicaoEInativacao() {
+      if (!contextoRedistribuicao) return;
+
+      const total = contextoRedistribuicao.membrosVinculados.length;
+      const preenchidos = contextoRedistribuicao.membrosVinculados.filter(m => contextoRedistribuicao.novosLideres[m.id]).length;
+      if (preenchidos !== total) return;
+
+      let snapshotMembros = null;
+      if (ModoVisual.ativo()) {
+        snapshotMembros = ModoVisual.membros().map(m => ({ ...m }));
+      }
+
+      try {
+        const membrosTodos = await obterMembrosBase();
+
+        for (const membro of contextoRedistribuicao.membrosVinculados) {
+          const novoLiderId = contextoRedistribuicao.novosLideres[membro.id];
+          const novoLider = membrosTodos.find(x => x.id === novoLiderId) || lideresMap.get(novoLiderId);
+          const celulasNovoLider = celulasPorLider.get(novoLiderId) || [];
+          const celulaDestino = celulasNovoLider[0] || null;
+
+          await MembrosApi.atualizar(membro.id, {
+            leaderId: novoLiderId,
+            leader: novoLider ? { id: novoLiderId, fullName: novoLider.fullName } : membro.leader,
+            cellId: celulaDestino?.id || membro.cellId,
+            cell: celulaDestino ? { id: celulaDestino.id, name: celulaDestino.name } : membro.cell
+          });
+        }
+
+        await MembrosApi.inativar(contextoRedistribuicao.lider.id);
+        fecharModal(modalRedistribuicaoLider);
+        contextoRedistribuicao = null;
+        Notificacao.sucesso('Membro inativado com sucesso.');
+        carregarMembros();
+      } catch (erro) {
+        if (snapshotMembros) {
+          ModoVisual.salvarMembros(snapshotMembros);
+        }
+        console.error('Erro ao redistribuir e inativar', erro);
+        Notificacao.erro('Falha ao redistribuir membros. Nenhuma alteração foi mantida.');
+      }
+    }
+
+    async function reativarMembro(id) {
+      try {
+        await MembrosApi.reativar(id);
+        Notificacao.sucesso('Membro reativado com sucesso.');
+        carregarMembros();
+      } catch (erro) {
+        console.error('Erro ao reativar membro', erro);
+        Notificacao.erro('Falha ao reativar membro.');
+      }
+    }
+
+    function editarMembro(id) {
+      window.location.href = `/cadastro-membro.html?id=${id}`;
+    }
+
+    function visualizarCelulaDoMembro(membroId) {
+      window.location.href = `/visualizar-celula.html?liderId=${membroId}`;
+    }
+
+    btnCancelarInativacao.addEventListener('click', () => {
+      membroPendenteInativacao = null;
+      fecharModal(modalConfirmacaoInativacao);
+    });
+
+    btnConfirmarInativacao.addEventListener('click', confirmarInativacaoSimples);
+
+    btnCancelarRedistribuicao.addEventListener('click', () => {
+      contextoRedistribuicao = null;
+      fecharModal(modalRedistribuicaoLider);
+    });
+
+    btnConfirmarRedistribuicao.addEventListener('click', confirmarRedistribuicaoEInativacao);
+
+    modalConfirmacaoInativacao.addEventListener('click', (e) => {
+      if (e.target === modalConfirmacaoInativacao) {
+        membroPendenteInativacao = null;
+        fecharModal(modalConfirmacaoInativacao);
+      }
+    });
+
+    modalRedistribuicaoLider.addEventListener('click', (e) => {
+      if (e.target === modalRedistribuicaoLider) {
+        contextoRedistribuicao = null;
+        fecharModal(modalRedistribuicaoLider);
+      }
+    });
+
+    window.prepararInativacao = prepararInativacao;
+    window.reativarMembro = reativarMembro;
+    filtroStatusSelect.value = 'ativo';
+    renderizarFiltrosDinamicos();
+
+    carregarFiltrosRelacionados().finally(() => carregarMembros());
+  </script>
+</body>
+</html>
