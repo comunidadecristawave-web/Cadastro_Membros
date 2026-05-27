@@ -127,7 +127,6 @@
     }
 
     .btn-status {
-      padding: var(--espaco-md) var(--espaco-xl);
       border: none;
       border-radius: var(--raio-md);
       color: var(--cor-fundo);
@@ -148,19 +147,28 @@
       gap: var(--espaco-md);
       margin-top: var(--espaco-2xl);
       justify-content: flex-end;
+      align-items: stretch;
+    }
+
+    .grupo-botoes > * {
+      flex: 1;
+      min-height: 64px;
+      padding: 0 var(--espaco-lg);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-family: var(--fonte-principal);
+      font-size: var(--fonte-tamanho-lg);
+      font-weight: var(--fonte-peso-semibold);
+      line-height: 1.15;
     }
 
     .btn-enviar {
-      flex: 1;
-      max-width: 300px;
-      padding: var(--espaco-md) var(--espaco-xl);
       background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
       color: var(--cor-fundo);
       border: none;
       border-radius: var(--raio-md);
-      font-family: var(--fonte-principal);
-      font-size: var(--fonte-tamanho-base);
-      font-weight: var(--fonte-peso-semibold);
       cursor: pointer;
       transition: all var(--transicao-rapida);
       display: flex;
@@ -180,14 +188,10 @@
     }
 
     .btn-cancelar {
-      padding: var(--espaco-md) var(--espaco-xl);
       background: var(--cor-fundo-alt);
       color: var(--cor-texto);
       border: 1px solid var(--cor-borda);
       border-radius: var(--raio-md);
-      font-family: var(--fonte-principal);
-      font-size: var(--fonte-tamanho-base);
-      font-weight: var(--fonte-peso-semibold);
       cursor: pointer;
       transition: all var(--transicao-rapida);
       text-decoration: none;
@@ -270,8 +274,12 @@
 
       .btn-enviar,
       .btn-cancelar {
-        max-width: none;
         width: 100%;
+      }
+
+      .grupo-botoes > * {
+        font-size: var(--fonte-tamanho-lg);
+        min-height: 56px;
       }
     }
   </style>
@@ -447,6 +455,18 @@
             </div>
 
             <div class="grupo-form">
+              <label for="category">Categoria <span class="obrigatorio">*</span></label>
+              <select id="category" name="category" required>
+                <option value="">Selecione...</option>
+                <option value="Kids">Kids</option>
+                <option value="Teens">Teens</option>
+                <option value="Adolescente">Adolescente</option>
+                <option value="Adulto">Adulto</option>
+              </select>
+              <div class="mensagem-erro" data-campo="category"></div>
+            </div>
+
+            <div class="grupo-form">
               <label for="email">Email</label>
               <input type="email" id="email" name="email" placeholder="email@exemplo.com">
               <div class="mensagem-erro" data-campo="email"></div>
@@ -493,18 +513,6 @@
                 <option value="">Selecione um líder...</option>
               </select>
               <div class="mensagem-erro" data-campo="leaderId"></div>
-            </div>
-
-            <div class="grupo-form">
-              <label for="category">Categoria <span class="obrigatorio">*</span></label>
-              <select id="category" name="category" required>
-                <option value="">Selecione a categoria...</option>
-                <option value="Kids">Kids</option>
-                <option value="Teens">Teens</option>
-                <option value="Adolescente">Adolescente</option>
-                <option value="Adulto">Adulto</option>
-              </select>
-              <div class="mensagem-erro" data-campo="category"></div>
             </div>
 
             <div class="grupo-form">
@@ -675,8 +683,6 @@
       return data <= hojeSemHora;
     }
 
-    let mapaCategoriaLideres = {};
-
     async function carregarSelects() {
       try {
         const [lideresResp, celulasResp, membrosResp] = await Promise.all([
@@ -693,7 +699,6 @@
         (lideresResp.items || []).forEach(lider => {
           if (lider.isActive === false) return;
           idsLideres.add(lider.id);
-          mapaCategoriaLideres[lider.id] = lider.category || 'Adulto';
           opcoesLideres.push({ id: lider.id, nome: lider.fullName });
         });
 
@@ -703,7 +708,6 @@
           const membroLider = membros.find(x => x.id === idLider);
           if (!membroLider || membroLider.isActive === false) return;
           idsLideres.add(idLider);
-          mapaCategoriaLideres[idLider] = membroLider.category || 'Adulto';
           opcoesLideres.push({ id: idLider, nome: membroLider.fullName });
         });
 
@@ -714,12 +718,7 @@
             leaderId.appendChild(option);
           });
 
-        leaderId.addEventListener('change', () => {
-          const liderSelecionadoId = leaderId.value;
-          if (liderSelecionadoId && mapaCategoriaLideres[liderSelecionadoId]) {
-            DOM.obter('#category').value = mapaCategoriaLideres[liderSelecionadoId];
-          }
-        });
+
 
         celulasDisponiveis = celulas;
       } catch (erro) {
@@ -727,6 +726,11 @@
         Notificacao.erro('Erro ao carregar dados');
       }
     }
+      function obterCelulaDoLider(leaderIdValor) {
+        if (!leaderIdValor) return null;
+        return celulasDisponiveis.find(c => c.leaderId === leaderIdValor || c.leader?.id === leaderIdValor) || null;
+      }
+
       async function carregarMembroParaEdicao() {
         if (!emEdicao) return;
 
@@ -734,7 +738,7 @@
           const membro = await MembrosApi.obter(membroId);
           if (!membro) {
             Notificacao.erro('Membro não encontrado');
-            setTimeout(() => window.location.href = '/membros.html', 700);
+            setTimeout(() => window.location.href = resolverRotaLocal('/membros.html'), 700);
             return;
           }
 
@@ -747,6 +751,7 @@
           DOM.obter('#birthDate').value = (membro.birthDate || '').slice(0, 10);
           DOM.obter('#joinDate').value = (membro.joinDate || '').slice(0, 10);
           DOM.obter('#joinType').value = membro.joinType || '';
+          DOM.obter('#category').value = membro.category || '';
           DOM.obter('#phone').value = membro.phone || '';
           DOM.obter('#email').value = membro.email || '';
           DOM.obter('#addressStreet').value = membro.addressStreet || '';
@@ -755,11 +760,16 @@
           DOM.obter('#addressNeighborhood').value = membro.addressNeighborhood || '';
           DOM.obter('#addressCity').value = membro.addressCity || '';
           DOM.obter('#leaderId').value = membro.leaderId || '';
-          DOM.obter('#category').value = membro.category || '';
 
-          if (membro.leaderId && mapaCategoriaLideres[membro.leaderId]) {
-            DOM.obter('#category').value = mapaCategoriaLideres[membro.leaderId];
+          // Evita auto-relacionamento de discipulado em edição.
+          const opcaoPropria = DOM.obter(`#leaderId option[value="${membroId}"]`);
+          if (opcaoPropria) {
+            opcaoPropria.remove();
           }
+          if (DOM.obter('#leaderId').value === membroId) {
+            DOM.obter('#leaderId').value = '';
+          }
+
 
           celulaDoMembroEmEdicao = celulasDisponiveis.find(c => (c.leaderId || c.leader?.id) === membroId) || null;
           isCellLeaderSwitch.value = membro.isCellLeader ? 'sim' : 'nao';
@@ -838,6 +848,7 @@
         const birthDate = document.getElementById('birthDate').value;
         const joinDate = document.getElementById('joinDate').value;
         const joinType = document.getElementById('joinType').value;
+        const category = document.getElementById('category').value;
         const email = document.getElementById('email').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const addressStreet = document.getElementById('addressStreet').value.trim();
@@ -845,7 +856,7 @@
         const addressNeighborhood = document.getElementById('addressNeighborhood').value.trim();
         const addressCity = document.getElementById('addressCity').value.trim();
         const leaderIdVal = document.getElementById('leaderId').value;
-        const categoryVal = document.getElementById('category').value;
+
         const ehLider = isCellLeaderSwitch.value === 'sim';
 
         if (!fullName || fullName.length < 3) {
@@ -874,6 +885,16 @@
 
         if (!joinType) {
           mostrarErro('joinType', 'Selecione o tipo de ingresso');
+          valido = false;
+        }
+
+        if (!category) {
+          mostrarErro('category', 'Selecione a categoria do membro');
+          valido = false;
+        }
+
+        if (birthDate && joinDate && joinDate < birthDate) {
+          mostrarErro('joinDate', 'A data de ingresso não pode ser anterior à data de nascimento');
           valido = false;
         }
 
@@ -915,10 +936,18 @@
           valido = false;
         }
 
-        if (!categoryVal) {
-          mostrarErro('category', 'Selecione uma categoria');
+        if (emEdicao && leaderIdVal === membroId) {
+          mostrarErro('leaderId', 'Um membro não pode ser discipulado por ele mesmo.');
           valido = false;
         }
+
+        const celulaDoLider = obterCelulaDoLider(leaderIdVal);
+        if (!ehLider && leaderIdVal && !celulaDoLider) {
+          mostrarErro('leaderId', 'Líder selecionado sem célula vinculada. Escolha outro líder ou marque este membro como líder de célula.');
+          valido = false;
+        }
+
+
 
         if (ehLider) {
           const numeroCelula = DOM.obter('#cellNumber').value.trim();
@@ -1018,7 +1047,7 @@
             isCellLeader: isCellLeaderSwitch.value === 'sim'
           };
 
-          const celulaDoLider = celulasDisponiveis.find(c => c.leaderId === dados.leaderId || c.leader?.id === dados.leaderId);
+          const celulaDoLider = obterCelulaDoLider(dados.leaderId);
           if (celulaDoLider) {
             dados.cellId = celulaDoLider.id;
           } else if (emEdicao && membroEmEdicao?.cellId) {
@@ -1082,7 +1111,7 @@
           }
 
           setTimeout(() => {
-            window.location.href = '/membros.html';
+            window.location.href = resolverRotaLocal('/membros.html');
           }, 1000);
 
         } catch (erro) {

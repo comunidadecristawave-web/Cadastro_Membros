@@ -494,7 +494,7 @@
 
         if (!celulaId) {
           Notificacao.aviso('Célula não informada');
-          window.location.href = '/membros.html';
+          window.location.href = resolverRotaLocal('/membros.html');
           return;
         }
 
@@ -502,7 +502,7 @@
 
         if (!celula) {
           Notificacao.aviso('Célula não encontrada');
-          window.location.href = '/membros.html';
+          window.location.href = resolverRotaLocal('/membros.html');
           return;
         }
 

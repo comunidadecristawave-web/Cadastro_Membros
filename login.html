@@ -348,7 +348,7 @@
 
       TokenManager.salvarToken('demo-token', 720);
       UsuarioManager.salvarUsuario(usuario);
-      window.location.href = '/dashboard.html';
+      window.location.href = resolverRotaLocal('/dashboard.html');
     });
 
     formLogin.addEventListener('submit', async (e) => {
@@ -385,7 +385,7 @@
         // Mostrar sucesso com animação
         btnTexto.textContent = 'Sucesso';
         setTimeout(() => {
-          window.location.href = '/dashboard.html';
+          window.location.href = resolverRotaLocal('/dashboard.html');
         }, 500);
 
       } catch (erro) {

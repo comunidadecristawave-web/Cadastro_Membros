@@ -253,7 +253,7 @@
   <script>
     // Redirecionar se já autenticado
     if (localStorage.getItem('cadastro_membros_token')) {
-      window.location.href = '/dashboard.html';
+      window.location.href = resolverRotaLocal('/dashboard.html');
     }
   </script>
 </body>

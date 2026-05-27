@@ -1321,13 +1321,13 @@
     });
 
     cardCelulasAtivas.addEventListener('click', () => {
-      window.location.href = '/celulas.html';
+      window.location.href = resolverRotaLocal('/celulas.html');
     });
 
     cardCelulasAtivas.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        window.location.href = '/celulas.html';
+        window.location.href = resolverRotaLocal('/celulas.html');
       }
     });
 

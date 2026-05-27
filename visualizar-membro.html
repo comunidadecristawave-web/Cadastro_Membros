@@ -316,7 +316,7 @@
     async function carregar() {
       if (!membroId) {
         Notificacao.aviso('Membro não informado');
-        window.location.href = '/membros.html';
+        window.location.href = resolverRotaLocal('/membros.html');
         return;
       }
 
@@ -327,7 +327,7 @@
 
         if (!membro) {
           Notificacao.aviso('Membro não encontrado');
-          window.location.href = '/membros.html';
+          window.location.href = resolverRotaLocal('/membros.html');
           return;
         }
 
