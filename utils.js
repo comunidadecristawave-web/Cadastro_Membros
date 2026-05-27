@@ -15,13 +15,160 @@ const CONFIG = {
   TIMEOUT: 10000
 };
 
-const DEMO_VERSION = '3';
+const DEMO_VERSION = '5';
+
+const DEMO_LEADERS = [
+  { id: '90000000-0000-0000-0000-000000000001', fullName: 'Pastor Rafael Miamoto', category: 'Adulto' },
+  { id: '90000000-0000-0000-0000-000000000002', fullName: 'Pastora Flávia Miamoto', category: 'Adulto' }
+];
+
+const DEMO_CELLS_BASE = [
+  {
+    id: 'c-90000000-0000-0000-0000-000000000001',
+    name: 'Célula Pastor Rafael Miamoto',
+    audience: 'homens',
+    meetingDay: 2,
+    meetingTime: '19:30:00',
+    neighborhood: 'Centro',
+    city: 'Mandaguari - PR',
+    street: 'Rua da Consolacao',
+    number: '101',
+    complement: null,
+    types: ['Adulto'],
+    leaderId: '90000000-0000-0000-0000-000000000001'
+  },
+  {
+    id: 'c-90000000-0000-0000-0000-000000000002',
+    name: 'Célula Pastora Flávia Miamoto',
+    audience: 'mulheres',
+    meetingDay: 4,
+    meetingTime: '20:00:00',
+    neighborhood: 'Vila Mariana',
+    city: 'Mandaguari - PR',
+    street: 'Rua Vergueiro',
+    number: '202',
+    complement: null,
+    types: ['Adulto'],
+    leaderId: '90000000-0000-0000-0000-000000000002'
+  }
+];
+
+const DEMO_MEMBER_NAMES = [
+  'Lucas Almeida', 'Mariana Alves', 'Pedro Santos', 'Camila Rocha', 'Thiago Martins',
+  'Beatriz Lima', 'Gabriel Costa', 'Juliana Ferreira', 'Bruno Carvalho', 'Larissa Oliveira',
+  'Felipe Barros', 'Renata Gomes', 'Diego Nunes', 'Patricia Mendes', 'Vinicius Araujo',
+  'Aline Ribeiro', 'Rafael Souza', 'Debora Teixeira', 'Eduardo Campos', 'Vanessa Pinto',
+  'Marcelo Dias', 'Tatiane Moraes', 'Ricardo Freitas', 'Priscila Duarte', 'Andre Batista',
+  'Natalia Rezende', 'Leandro Cardoso', 'Jessica Faria', 'Rodrigo Pires', 'Simone Castro',
+  'Daniel Tavares', 'Bianca Lopes', 'Caio Fernandes', 'Fernanda Coelho', 'Igor Sampaio',
+  'Karina Melo', 'Wesley Cunha', 'Elaine Machado', 'Gustavo Peixoto', 'Monica Vieira',
+  'Samuel Braga', 'Cristiane Neves', 'Heitor Ramos', 'Sabrina Torres', 'Jonathan Queiroz',
+  'Milena Andrade', 'Cesar Maia', 'Paula Aguiar', 'Leonardo Prado', 'Isabela Monteiro'
+];
+
+const DEMO_MEMBERS_SEED = (() => {
+  const pastorId = DEMO_LEADERS[0].id;
+  const pastoraId = DEMO_LEADERS[1].id;
+  const pastorCellId = DEMO_CELLS_BASE[0].id;
+  const pastoraCellId = DEMO_CELLS_BASE[1].id;
+  const categorias = ['Adulto', 'Teens', 'Adolescente', 'Kids'];
+
+  const superiores = [
+    {
+      id: 'm-pastor-rafael',
+      fullName: 'Pastor Rafael Miamoto',
+      email: 'rafael.miamoto@wave.local',
+      phone: '11990000001',
+      birthDate: '1981-03-12',
+      joinDate: '2010-02-01',
+      joinType: 'Batismo',
+      category: 'Adulto',
+      addressStreet: 'Rua da Consolacao',
+      addressNumber: '101',
+      addressComplement: null,
+      addressNeighborhood: 'Centro',
+      addressCity: 'Mandaguari - PR',
+      isActive: true,
+      isCellLeader: true,
+      leaderId: pastoraId,
+      cellId: pastorCellId
+    },
+    {
+      id: 'm-pastora-flavia',
+      fullName: 'Pastora Flávia Miamoto',
+      email: 'flavia.miamoto@wave.local',
+      phone: '11990000002',
+      birthDate: '1983-07-24',
+      joinDate: '2011-03-05',
+      joinType: 'Recepção',
+      category: 'Adulto',
+      addressStreet: 'Rua Vergueiro',
+      addressNumber: '202',
+      addressComplement: null,
+      addressNeighborhood: 'Vila Mariana',
+      addressCity: 'Mandaguari - PR',
+      isActive: true,
+      isCellLeader: true,
+      leaderId: pastorId,
+      cellId: pastoraCellId
+    }
+  ];
+
+  const membros = DEMO_MEMBER_NAMES.map((nome, index) => {
+    const usaPastor = index % 2 === 0;
+    const leaderId = usaPastor ? pastorId : pastoraId;
+    const cellId = usaPastor ? pastorCellId : pastoraCellId;
+    const numero = String(index + 1).padStart(3, '0');
+    const mes = String((index % 12) + 1).padStart(2, '0');
+    const dia = String((index % 28) + 1).padStart(2, '0');
+    const anoNasc = 1986 + (index % 16);
+    const anoIngresso = 2016 + (index % 8);
+
+    return {
+      id: `m-${numero}`,
+      fullName: nome,
+      email: `membro${numero}@wave.local`,
+      phone: `11991${String(10000 + index).slice(-5)}`,
+      birthDate: `${anoNasc}-${mes}-${dia}`,
+      joinDate: `${anoIngresso}-${mes}-${dia}`,
+      joinType: index % 2 === 0 ? 'Batismo' : 'Recepção',
+      category: categorias[index % categorias.length],
+      addressStreet: `Rua ${index % 2 === 0 ? 'Esperanca' : 'Vitoria'}`,
+      addressNumber: String(300 + index),
+      addressComplement: null,
+      addressNeighborhood: index % 2 === 0 ? 'Centro' : 'Vila Mariana',
+      addressCity: 'Mandaguari - PR',
+      isActive: true,
+      isCellLeader: false,
+      leaderId,
+      cellId
+    };
+  });
+
+  return [...superiores, ...membros];
+})();
+
+const DEMO_CELLS = DEMO_CELLS_BASE.map(celula => ({
+  ...celula,
+  leader: DEMO_LEADERS.find(l => l.id === celula.leaderId) || null,
+  members: DEMO_MEMBERS_SEED
+    .filter(membro => membro.cellId === celula.id)
+    .map(membro => ({ id: membro.id }))
+}));
+
+const DEMO_MEMBERS = DEMO_MEMBERS_SEED.map(membro => {
+  const leader = DEMO_LEADERS.find(l => l.id === membro.leaderId) || null;
+  const cell = DEMO_CELLS.find(c => c.id === membro.cellId) || null;
+
+  return {
+    ...membro,
+    leader,
+    cell: cell ? { id: cell.id, name: cell.name } : null
+  };
+});
 
 const DEMO_DATA = {
-  lideres: [
-    { id: '11111111-1111-1111-1111-111111111111', fullName: 'Pr. Daniel Rocha', category: 'Adulto' },
-    { id: '22222222-2222-2222-2222-222222222222', fullName: 'Ana Paula Mendes', category: 'Adulto' }
-  ],
+  lideres: DEMO_LEADERS,
   usuarios: [
     {
       id: '00000000-0000-0000-0000-000000000001',
@@ -42,100 +189,8 @@ const DEMO_DATA = {
       temporaryPassword: 'Temp@2026'
     }
   ],
-  celulas: [
-    {
-      id: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
-      name: 'Pr. Daniel Rocha',
-      audience: 'homens',
-      meetingDay: 2,
-      meetingTime: '19:30:00',
-      neighborhood: 'Centro',
-      city: 'Sao Paulo',
-      leader: { id: '11111111-1111-1111-1111-111111111111', fullName: 'Pr. Daniel Rocha' },
-      members: [{ id: 'm1' }, { id: 'm2' }]
-    },
-    {
-      id: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
-      name: 'Ana Paula Mendes',
-      audience: 'mulheres',
-      meetingDay: 4,
-      meetingTime: '20:00:00',
-      neighborhood: 'Zona Norte',
-      city: 'Sao Paulo',
-      leader: { id: '22222222-2222-2222-2222-222222222222', fullName: 'Ana Paula Mendes' },
-      members: [{ id: 'm3' }]
-    }
-  ],
-  membros: [
-    {
-      id: 'm1',
-      fullName: 'Joao Silva',
-      email: 'joao@demo.com',
-      phone: '11999998888',
-      birthDate: '1992-04-15',
-      category: 'Adulto',
-      addressStreet: 'Rua das Flores',
-      addressNumber: '123',
-      addressNeighborhood: 'Centro',
-      addressCity: 'Sao Paulo',
-      isActive: true,
-      leaderId: '11111111-1111-1111-1111-111111111111',
-      leader: { id: '11111111-1111-1111-1111-111111111111', fullName: 'Pr. Daniel Rocha' },
-      cellId: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
-      cell: { id: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1', name: 'Celula Centro' }
-    },
-    {
-      id: 'm2',
-      fullName: 'Maria Oliveira',
-      email: 'maria@demo.com',
-      phone: '11988887777',
-      birthDate: '1988-05-20',
-      category: 'Adulto',
-      addressStreet: 'Av. Brasil',
-      addressNumber: '456',
-      addressNeighborhood: 'Vila Mariana',
-      addressCity: 'Sao Paulo',
-      isActive: true,
-      leaderId: '11111111-1111-1111-1111-111111111111',
-      leader: { id: '11111111-1111-1111-1111-111111111111', fullName: 'Pr. Daniel Rocha' },
-      cellId: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
-      cell: { id: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1', name: 'Celula Centro' }
-    },
-    {
-      id: 'm3',
-      fullName: 'Carlos Souza',
-      email: 'carlos@demo.com',
-      phone: '11977776666',
-      birthDate: '1995-09-10',
-      category: 'Adolescente',
-      addressStreet: 'Rua Aurora',
-      addressNumber: '789',
-      addressNeighborhood: 'Santana',
-      addressCity: 'Sao Paulo',
-      isActive: false,
-      leaderId: '22222222-2222-2222-2222-222222222222',
-      leader: { id: '22222222-2222-2222-2222-222222222222', fullName: 'Ana Paula Mendes' },
-      cellId: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
-      cell: { id: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2', name: 'Celula Norte' }
-    },
-    {
-      id: 'm4',
-      fullName: 'Matheus Lopes',
-      email: 'matheus@demo.com',
-      phone: '11966665555',
-      birthDate: '1996-11-03',
-      category: 'Adulto',
-      addressStreet: 'Rua Alvorada',
-      addressNumber: '321',
-      addressNeighborhood: 'Moema',
-      addressCity: 'Sao Paulo',
-      isActive: true,
-      leaderId: '22222222-2222-2222-2222-222222222222',
-      leader: { id: '22222222-2222-2222-2222-222222222222', fullName: 'Ana Paula Mendes' },
-      cellId: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
-      cell: { id: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2', name: 'Celula Norte' }
-    }
-  ]
+  celulas: DEMO_CELLS,
+  membros: DEMO_MEMBERS
 };
 
 class ModoVisual {
@@ -148,18 +203,10 @@ class ModoVisual {
 
     const versaoAtual = localStorage.getItem(CONFIG.DEMO_VERSION_KEY);
     if (versaoAtual !== DEMO_VERSION) {
-      // Preserva dados já existentes do usuário no modo visual.
-      if (!localStorage.getItem(CONFIG.DEMO_MEMBERS_KEY)) {
-        localStorage.setItem(CONFIG.DEMO_MEMBERS_KEY, JSON.stringify(DEMO_DATA.membros));
-      }
-
-      if (!localStorage.getItem(CONFIG.DEMO_CELLS_KEY)) {
-        localStorage.setItem(CONFIG.DEMO_CELLS_KEY, JSON.stringify(DEMO_DATA.celulas));
-      }
-
-      if (!localStorage.getItem(CONFIG.DEMO_USERS_KEY)) {
-        localStorage.setItem(CONFIG.DEMO_USERS_KEY, JSON.stringify(DEMO_DATA.usuarios));
-      }
+      // Em troca de versão, sempre atualiza a base demo para refletir a massa mais recente.
+      localStorage.setItem(CONFIG.DEMO_MEMBERS_KEY, JSON.stringify(DEMO_DATA.membros));
+      localStorage.setItem(CONFIG.DEMO_CELLS_KEY, JSON.stringify(DEMO_DATA.celulas));
+      localStorage.setItem(CONFIG.DEMO_USERS_KEY, JSON.stringify(DEMO_DATA.usuarios));
 
       localStorage.setItem(CONFIG.DEMO_VERSION_KEY, DEMO_VERSION);
       return;
@@ -350,7 +397,7 @@ class ApiClient {
     ModoVisual.desativar();
     TokenManager.removerToken();
     UsuarioManager.removerUsuario();
-    window.location.href = '/login.html';
+    navegarPara('/login.html');
   }
 }
 
@@ -389,7 +436,7 @@ class AuthApi {
     ModoVisual.desativar();
     TokenManager.removerToken();
     UsuarioManager.removerUsuario();
-    window.location.href = '/login.html';
+    navegarPara('/login.html');
   }
 }
 
@@ -1090,12 +1137,79 @@ class DOM {
 }
 
 /* ============================================
+   UTILITÁRIOS - NAVEGAÇÃO
+   ============================================ */
+
+function resolverRotaLocal(path) {
+  if (!path) return path;
+
+  if (window.location.protocol === 'file:' && /^\/[a-zA-Z]:\//.test(path)) {
+    return path;
+  }
+
+  if (!path.startsWith('/')) {
+    return path;
+  }
+
+  if (window.location.protocol !== 'file:') {
+    return path;
+  }
+
+  const pathname = window.location.pathname || '';
+  const ultimaBarra = pathname.lastIndexOf('/');
+  const base = ultimaBarra >= 0 ? pathname.slice(0, ultimaBarra + 1) : '/';
+  const destino = path.replace(/^\/+/, '');
+
+  return `${base}${destino}`;
+}
+
+function navegarPara(path) {
+  window.location.href = resolverRotaLocal(path);
+}
+
+function adaptarLinksAbsolutosParaArquivo() {
+  if (window.location.protocol !== 'file:') {
+    return;
+  }
+
+  DOM.obterTodos('a[href^="/"]').forEach(link => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+    link.setAttribute('href', resolverRotaLocal(href));
+  });
+
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[href^="/"]');
+    if (!link) return;
+
+    const href = link.getAttribute('href') || '';
+    if (/^\/[a-zA-Z]:\//.test(href)) {
+      return;
+    }
+
+    if (
+      event.defaultPrevented ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      link.target === '_blank'
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    navegarPara(href);
+  });
+}
+
+/* ============================================
    PROTEÇÃO DE ROTAS
    ============================================ */
 
 function protegerRota() {
   if (!UsuarioManager.estaAutenticado()) {
-    window.location.href = '/login.html';
+    navegarPara('/login.html');
     return false;
   }
   return true;
@@ -1103,7 +1217,7 @@ function protegerRota() {
 
 function rotaPublica() {
   if (UsuarioManager.estaAutenticado()) {
-    window.location.href = '/dashboard.html';
+    navegarPara('/dashboard.html');
   }
 }
 
@@ -1126,11 +1240,43 @@ function inicializarNavbar() {
       AuthApi.logout();
     });
   }
+
+  const pathAtual = (window.location.pathname || '').toLowerCase();
+  const grupos = {
+    dashboard: ['/dashboard.html'],
+    membros: ['/membros.html', '/cadastro-membro.html', '/visualizar-membro.html', '/celulas.html', '/visualizar-celula.html'],
+    importacao: ['/importacao.html'],
+    administracao: ['/gerenciar-usuarios.html']
+  };
+
+  let grupoAtivo = '';
+  if (grupos.dashboard.some(p => pathAtual.endsWith(p))) grupoAtivo = 'dashboard';
+  if (grupos.membros.some(p => pathAtual.endsWith(p))) grupoAtivo = 'membros';
+  if (grupos.importacao.some(p => pathAtual.endsWith(p))) grupoAtivo = 'importacao';
+  if (grupos.administracao.some(p => pathAtual.endsWith(p))) grupoAtivo = 'administracao';
+
+  const linksMenu = DOM.obterTodos('.navbar-menu a, .navbar-mobile-menu a');
+  linksMenu.forEach(link => {
+    link.classList.remove('ativo');
+    const href = (link.getAttribute('href') || '').toLowerCase();
+    if (!href) return;
+
+    const ehDashboard = href.endsWith('/dashboard.html') && grupoAtivo === 'dashboard';
+    const ehMembros = href.endsWith('/membros.html') && grupoAtivo === 'membros';
+    const ehImportacao = href.endsWith('/importacao.html') && grupoAtivo === 'importacao';
+    const ehAdministracao = href.endsWith('/gerenciar-usuarios.html') && grupoAtivo === 'administracao';
+
+    if (ehDashboard || ehMembros || ehImportacao || ehAdministracao) {
+      link.classList.add('ativo');
+    }
+  });
 }
 
 // Auto inicializar navbar quando DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[utils.js] DOMContentLoaded - Inicializando');
+
+  adaptarLinksAbsolutosParaArquivo();
   
   // Ativar modo visual e autenticação
   ModoVisual.ativar();
