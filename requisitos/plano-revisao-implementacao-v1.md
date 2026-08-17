@@ -4,7 +4,7 @@
 
 # Plano de Revisão — Especificação vs. Implementação (v1)
 
-**Versão:** 1.2 | **Última atualização:** 15/08/2026 | **Autor:** Thiago Oliveira (com apoio de IA)
+**Versão:** 1.3 | **Última atualização:** 17/08/2026 | **Autor:** Thiago Oliveira (com apoio de IA)
 
 **Status:** 🔴 Em construção — enquanto está sendo escrito com o PO. **Cada ponto marcado como fechado (✅/🔧/➕/❌ com decisão registrada) já é especificação válida para execução imediata** — não é backlog para priorização futura.
 
@@ -75,6 +75,7 @@ O bloco "👑 Dados da Célula" no cadastro de membro (Novo Membro → "É Líde
 4. **➕ Inserir:** opção **"Usar meu endereço residencial"** (padrão, pré-selecionada) ou **"Outro endereço"** ao definir uma célula (criação e edição). Se "Outro endereço" for selecionado, habilita os campos Rua, Número, Bairro, Cidade, Complemento para preenchimento manual — cobre o cenário de uma célula realizada fora da casa do líder (ex: quadra de futebol de outro bairro). **Sem campo de "ponto de referência/local"** — apenas os campos de endereço padrão.
 5. **➕ Inserir:** campo de Faixa Etária (Termo 1) e Finalidade (item 1 acima) em ambos os formulários (criar e editar).
 6. Reescrever o texto do formulário, removendo a suposição fixa de "em sua residência".
+7. **Regra adicional (esclarecida após revisão de QA):** a **Finalidade** de uma célula (Evangelística ou Liderança) é definida **apenas na criação** e **não pode ser alterada depois** pela tela de Editar Célula — o campo aparece lá somente como leitura/contexto, não editável. Para mudar a finalidade de um encontro, a célula atual deve ser fechada ([Ponto 20](#ponto-20--fechar-uma-célula-individual-sem-inativar-o-líder)) e uma nova criada com a finalidade correta.
 
 **Impacto em outros pontos deste documento:** afeta diretamente o formulário de Criar/Editar Membro (`membros/criar-membro.md`, `membros/editar-membro.md`), o formulário "Editar Líder"/Editar Célula (`celulas/editar-celula.md`), a Listagem de Células (`celulas/listar-celulas.md` — nova coluna/filtro de Finalidade e Faixa Etária) e a Importação CSV (`importacao/importacao-csv.md` — novas colunas no template).
 
@@ -203,7 +204,7 @@ O bloco "👑 Dados da Célula" no cadastro de membro (Novo Membro → "É Líde
 - 🔧 **Ajustar** o bug de carregamento — os cards devem exibir o valor correto desde o primeiro render (corrigir ordem de cálculo/carregamento dos dados).
 - ✅ **Manter** o card "Total de Células Ativas" — já funciona conforme especificado, nenhuma mudança necessária.
 - ➕ **Inserir** o comportamento completo do card "Aniversariantes do Mês", conforme especificação original — **sem ambiguidade de escopo:**
-  1. Ao clicar no card, abre uma **lista** (modal ou painel) com **todos os aniversariantes do mês corrente**, ordenada pelo dia do aniversário.
+  1. Ao clicar no card, abre um **modal** (popup — não uma página própria/nova URL) com **todos os aniversariantes do mês corrente**, ordenada pelo dia do aniversário. Mesmo padrão visual já usado em "Ficha do Membro" e "Ficha da Célula", para manter consistência.
   2. Cada **linha da lista** exibe: nome do membro e data do aniversário (DD/MM).
   3. Cada **linha tem seu próprio botão** "Enviar Parabéns" — não é um botão único para o card inteiro. Ao clicar, abre o WhatsApp com o número daquele membro específico e a mensagem de aniversário pré-formatada já preenchida.
 
@@ -268,9 +269,9 @@ O bloco "👑 Dados da Célula" no cadastro de membro (Novo Membro → "É Líde
 
 **🖥️ Implementado (testado ao vivo):** confirmado que não há validação nenhuma — vinculei ao vivo uma membro do sexo Feminino (Ana Luiza) a um líder do sexo Masculino (Lucas Bomfonti) sem qualquer aviso ou impedimento do sistema.
 
-**✅ Decisão final:** ➕ **Inserir agora** (revertendo a decisão original de adiar) — **ativar a validação de mesmo sexo entre líder e liderado**. Ao vincular um membro a um líder (no cadastro, edição ou reativação), o sistema deve verificar se o gênero do membro corresponde ao gênero do líder e impedir/alertar em caso de divergência.
+**✅ Decisão final:** ➕ **Inserir agora** (revertendo a decisão original de adiar) — **ativar a validação de mesmo sexo entre líder e liderado**. Ao vincular um membro a um líder (no cadastro, edição ou reativação), o sistema **bloqueia por completo** o salvamento se o gênero do membro divergir do gênero do líder — **não é um alerta contornável, é impedimento total** (diferente do alerta de duplicata do Ponto 8, que é contornável). O seletor de "Líder Responsável" deve, idealmente, já **filtrar** para mostrar apenas líderes do mesmo sexo do membro sendo cadastrado/editado, evitando que o usuário selecione uma opção inválida e só descubra o bloqueio ao salvar.
 
-**Ação para o requisito original:** `criar-membro.md`, `editar-membro.md` e `reativar-membro.md` precisam incorporar esta validação no seletor de "Líder Responsável" — filtrando ou bloqueando líderes de gênero diferente do membro sendo vinculado.
+**Ação para o requisito original:** `criar-membro.md`, `editar-membro.md` e `reativar-membro.md` precisam incorporar esta validação no seletor de "Líder Responsável" — filtrando (preferencial) ou bloqueando no salvamento líderes de gênero diferente do membro sendo vinculado. Esta mesma regra (só líderes do mesmo sexo) também se aplica ao seletor de "novo líder" no modal de redistribuição de discípulos ([Ponto 4](#ponto-4--ciclo-de-vida-do-membro-ausente-inativar--reativar)) e ao seletor de líder na reativação de membro — em ambos os casos, o seletor deve mostrar apenas líderes **ativos e do mesmo sexo**.
 
 ---
 
@@ -315,9 +316,26 @@ O bloco "👑 Dados da Célula" no cadastro de membro (Novo Membro → "É Líde
 
 - A coluna **"Ações"** (ícones de editar/inativar/etc.) nunca pode ser ocultada — sempre visível.
 - Todas as demais colunas de cada listagem começam **visíveis por padrão**; o usuário pode ocultar as que não quiser ver.
-- **A preferência de colunas é lembrada** — persiste por usuário entre sessões (não reseta a cada novo acesso à tela).
+- **A preferência de colunas é lembrada** — persiste por **usuário** (vinculada à conta, não ao navegador/dispositivo — se o mesmo usuário logar em outro computador, a preferência continua valendo).
 
 **Ação para o requisito original:** adicionar esta funcionalidade como requisito transversal em `membros/listar-membros.md`, `celulas/listar-celulas.md` e `administracao/gerenciar-usuarios.md`.
+
+---
+
+### Ponto 20 — Fechar uma célula individual sem inativar o líder
+
+**📄 Especificado:** nenhum requisito documenta isso — lacuna identificada durante revisão de QA sobre o Ponto 1.
+
+**🖥️ Implementado:** não existe — a única forma de "remover" uma célula hoje é inativar o líder inteiro, o que fecha **todas** as células dele ([Ponto 4](#ponto-4--ciclo-de-vida-do-membro-ausente-inativar--reativar)).
+
+**💬 Contexto:** com o Ponto 1 permitindo múltiplas células por líder, surge um cenário legítimo: um líder para de fazer a célula de terça, mas continua com a de quinta. Inativar o líder inteiro para fechar 1 célula específica destruiria a célula que continua ativa.
+
+**✅ Decisão final:** ➕ **Inserir** uma ação de **"Fechar Célula"** na ficha/edição de uma célula individual — independente de inativar o líder. Ao fechar uma célula específica:
+1. Se a célula fechada for do tipo **Evangelística** e tiver discípulos vinculados, o sistema exige a mesma redistribuição já usada na inativação de líder (não é possível fechar deixando discípulos "no ar").
+2. Se for a célula de **Liderança** e o líder tiver discípulos-líder formados nela, mesma regra: redistribuir para outro mentor antes.
+3. Se for a **última célula Evangelística** do líder, o sistema **bloqueia** o fechamento com aviso ("Todo líder precisa de ao menos 1 célula Evangelística — inative o próprio líder em vez de fechar esta célula, se for o caso").
+
+**Ação para o requisito original:** adicionar esta ação em `celulas/editar-celula.md` como novo fluxo "Fechar Célula".
 
 ---
 
@@ -422,12 +440,12 @@ Você mencionou que a ferramenta pode ter módulos secundários acoplados e que 
 
 ## 10. Resumo executivo (para acompanhamento rápido)
 
-**17 de 17 pontos divergentes decididos.** 3 de 3 módulos secundários candidatos originais já decididos (Eventos/Avisos retirado; Organograma mantido como P2; Relatórios+Exportação inseridos e consolidados). Restam quaisquer outros módulos que o PO ainda for trazer.
+**20 de 20 pontos divergentes decididos.** 3 de 3 módulos secundários candidatos originais já decididos (Eventos/Avisos retirado; Organograma mantido como P2; Relatórios+Exportação inseridos e consolidados). Pontos 18-20 e diversos esclarecimentos vieram da revisão crítica de QA sobre `criterios-aceitacao-qa-v1.md`. Restam quaisquer outros módulos que o PO ainda for trazer.
 
 | Categoria | Contagem |
 |---|---|
 | 🔧 Ajustar (existe, mas diverge ou tem bug) | 11 |
-| ➕ Inserir (especificado ou novo, não implementado) | 11 |
+| ➕ Inserir (especificado ou novo, não implementado) | 13 |
 | ❌ Retirar (implementado sem escopo, contradiz decisão v1) | 3 (Modo Líder inteiro + botão "Novo Líder" + Eventos/Avisos/Programação) |
 | ✅ Manter | 4 (Meu Perfil & Dados + redistribuição de líder já funcional + card "Células Ativas" do Dashboard + Organograma como P2) |
 
@@ -563,6 +581,7 @@ Percorremos termo a termo do produto para garantir que a ferramenta usa a **mesm
 | 15/08/2026 | Thiago Oliveira (com apoio de IA) | Ponto 18 registrado e decidido: gráfico "Ingressos de Membros por Mês" retirado do Dashboard |
 | 15/08/2026 | Thiago Oliveira (com apoio de IA) | Ponto 11 esclarecido: card de Aniversariantes abre lista com todos os aniversariantes do mês, cada linha com seu próprio botão "Enviar Parabéns" via WhatsApp (não um botão único para o card) |
 | 15/08/2026 | Thiago Oliveira (com apoio de IA) | Ponto 19 registrado e decidido: seleção dinâmica de colunas em todas as telas de listagem (Membros, Células, Usuários), com preferência persistida por usuário; coluna "Ações" sempre visível |
+| 17/08/2026 | Thiago Oliveira (com apoio de IA) | Ajustes a partir da análise crítica do QA sobre `criterios-aceitacao-qa-v1.md`: Ponto 16 esclarecido (validação de mesmo sexo é bloqueio total, não alerta contornável; regra estendida a redistribuição e reativação); Ponto 1 esclarecido (Finalidade da célula é imutável após criação); Ponto 11 esclarecido (Aniversariantes abre como modal, não página); Ponto 19 esclarecido (persistência de colunas é por usuário/conta, não por navegador); Ponto 20 criado (ação de fechar 1 célula individual sem inativar o líder inteiro) |
 
 ---
 
