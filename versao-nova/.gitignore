@@ -1,0 +1,12 @@
+# Logs e temporarios
+*.log
+.DS_Store
+Thumbs.db
+.agents/
+
+# Env e segredos
+.env
+.env.*
+.supabase.json
+config.local.js
+*.local.js
