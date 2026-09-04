@@ -408,6 +408,16 @@ window.WaveData = {
     return meses > 0 ? `${meses} mês(es)` : 'Menos de 1 mês';
   },
 
+  formatarDataCurta(dataISO) {
+    if (!dataISO) return '—';
+    const d = new Date(dataISO + 'T00:00:00');
+    if (Number.isNaN(d.getTime())) return dataISO;
+    const dia = String(d.getDate()).padStart(2, '0');
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const ano = String(d.getFullYear()).slice(-2);
+    return `${dia}/${mes}/${ano}`;
+  },
+
   calcInfoLideranca(membro) {
     if (!membro.eLider) return null;
     const discipulos = this.getDiscipulosByLider(membro.nome);

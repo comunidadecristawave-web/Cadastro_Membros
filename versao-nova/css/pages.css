@@ -1311,6 +1311,11 @@
     gap: 12px !important;
   }
 
+  .ficha-fields {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
   .modal-sheet {
     width: 100% !important;
     max-width: 100% !important;

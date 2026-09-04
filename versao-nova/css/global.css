@@ -81,6 +81,13 @@
   /* ── Layout ── */
   --nav-height: 72px;
   --header-height: 64px;
+
+  /* ── Font Sizes (escala tipográfica das fichas) ── */
+  --fs-caption: 0.72rem;
+  --fs-label: 0.78rem;
+  --fs-body: 0.88rem;
+  --fs-subtitle: 1rem;
+  --fs-title: 1.15rem;
 }
 
 /* ══════════════════════════════════════
@@ -544,6 +551,124 @@ input, textarea, select { font-family: inherit; }
   color: var(--text-secondary);
 }
 .sheet-close:active { color: var(--white); }
+
+.sheet-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.sheet-back {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.sheet-back:active { color: var(--white); }
+
+/* ── Componentes de Ficha (Discípulo / Célula) ── */
+.ficha-avatar {
+  width: var(--avatar-size, 52px);
+  height: var(--avatar-size, 52px);
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: calc(var(--avatar-size, 52px) * 0.38);
+  color: var(--white);
+  border: 2px solid var(--border-medium);
+  flex-shrink: 0;
+}
+
+.ficha-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ficha-hero-info {
+  width: 100%;
+}
+
+.ficha-hero-name {
+  font-size: var(--fs-subtitle);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--white);
+}
+
+.ficha-hero-meta {
+  font-size: var(--fs-label);
+  color: var(--text-tertiary);
+}
+
+.ficha-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-sm);
+}
+
+.ficha-stats .ficha-stat-card {
+  padding: var(--space-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ficha-stat-label {
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  font-weight: 700;
+  display: block;
+}
+
+.ficha-stat-value {
+  font-size: var(--fs-subtitle);
+  font-weight: 800;
+  color: var(--white);
+  margin-top: 4px;
+}
+
+.ficha-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  font-size: var(--fs-body);
+  text-align: center;
+}
+
+.ficha-field-label {
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
+}
+
+.ficha-field-value {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.ficha-section-title {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 6px;
+  display: block;
+}
 
 /* ── Responsive Display Utilities ── */
 @media (min-width: 769px) {

@@ -20,6 +20,7 @@ WavePages['admin-membros'] = {
   _showFiltrosDrawer: false,
   _showColunasDropdown: false,
   _membroDetalhes: null,
+  _origemFicha: null,
   _editandoMembro: false,
   _membroParaRedistribuir: null,
   _membroParaReativar: null,
@@ -696,7 +697,14 @@ WavePages['admin-membros'] = {
         <div class="modal-sheet" style="max-height:88vh;display:flex;flex-direction:column;padding:var(--space-xl) var(--space-xl) var(--space-md) var(--space-xl);">
           <div class="sheet-handle"></div>
           <div class="sheet-header" style="margin-bottom:var(--space-sm);">
-            <h3 class="sheet-title">${this._membroDetalhes && this._membroDetalhes.eLider ? 'Ficha do Membro' : 'Ficha do Discípulo'}</h3>
+            <div class="sheet-header-left">
+              ${this._origemFicha ? `
+                <button class="sheet-back" onclick="WavePages['admin-membros'].voltarOrigem()" title="Voltar">
+                  <i data-lucide="chevron-left" style="width:18px;height:18px;"></i>
+                </button>
+              ` : ''}
+              <h3 class="sheet-title">${this._membroDetalhes && this._membroDetalhes.eLider ? 'Ficha do Membro' : 'Ficha do Discípulo'}</h3>
+            </div>
             <button class="sheet-close" onclick="WavePages['admin-membros'].fecharDetalhes()">
               <i data-lucide="x" style="width:18px;height:18px;"></i>
             </button>
@@ -707,83 +715,92 @@ WavePages['admin-membros'] = {
         const idade = WaveData.calcIdade(m.dataNascimento);
         const tempoMembro = WaveData.calcTempoMembro(m.dataIngresso);
         const infoLider = WaveData.calcInfoLideranca(m);
+        const liderResolvido = (m.lider && m.lider !== '—')
+          ? ((m.liderId && WaveData.getMembroById(m.liderId)) || WaveData.getMembroByNome(m.lider))
+          : null;
+        const tipoIngressoBadge = m.tipoIngresso === 'Batismo' ? 'badge-success' : 'badge-white';
 
         return `
               <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
                 <div style="display:flex;flex-direction:column;gap:var(--space-md);overflow-y:auto;padding-right:6px;flex:1;padding-bottom:var(--space-md);">
-                  
+
                   <!-- Hero do Perfil -->
-                  <div style="display:flex;align-items:center;gap:var(--space-md);padding-bottom:var(--space-md);border-bottom:1px solid var(--border-subtle);">
-                    <div style="width:52px;height:52px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;color:var(--white);border:2px solid var(--border-medium);flex-shrink:0;">
+                  <div class="ficha-hero">
+                    <div class="ficha-avatar">
                       ${m.nome.charAt(0)}
                     </div>
-                    <div>
-                      <h2 style="font-size:1.2rem;font-weight:800;line-height:1.2;">${m.nome} ${m.eLider ? '<span style="color:var(--warning);font-size:0.75rem;font-weight:700;">👑 (Líder)</span>' : ''}</h2>
-                      <span style="font-size:0.8rem;color:var(--text-tertiary);">${m.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'} · Status: ${(m.status || 'ATIVO') === 'ATIVO' ? '<span style="color:var(--success);">Ativo</span>' : '<span style="color:var(--danger);">Inativo</span>'}</span>
+                    <div class="ficha-hero-info">
+                      <h2 class="ficha-hero-name">${m.nome} ${m.eLider ? '<span style="color:var(--warning);font-size:var(--fs-label);font-weight:700;">👑 (Líder)</span>' : ''}</h2>
+                      <span class="ficha-hero-meta">${m.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'} · Status: ${(m.status || 'ATIVO') === 'ATIVO' ? '<span style="color:var(--success);">Ativo</span>' : '<span style="color:var(--danger);">Inativo</span>'}</span>
                     </div>
                   </div>
 
                   <!-- Cards Calculados em Destaque -->
-                  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:var(--space-sm);">
-                    <div class="card" style="padding:var(--space-md);text-align:center;">
-                      <span style="font-size:0.7rem;color:var(--text-tertiary);text-transform:uppercase;font-weight:700;">Idade Atual</span>
-                      <div style="font-size:1.2rem;font-weight:800;color:var(--white);">${idade} anos</div>
+                  <div class="ficha-stats">
+                    <div class="card ficha-stat-card">
+                      <span class="ficha-stat-label">Idade Atual</span>
+                      <div class="ficha-stat-value">${idade} anos</div>
                     </div>
-                    <div class="card" style="padding:var(--space-md);text-align:center;">
-                      <span style="font-size:0.7rem;color:var(--text-tertiary);text-transform:uppercase;font-weight:700;">Tempo de Membro</span>
-                      <div style="font-size:1rem;font-weight:800;color:var(--white);">${tempoMembro}</div>
+                    <div class="card ficha-stat-card">
+                      <span class="ficha-stat-label">Tempo de Membro</span>
+                      <div class="ficha-stat-value">${tempoMembro}</div>
                     </div>
                     ${m.eLider && infoLider ? `
-                      <div class="card" onclick="WavePages['admin-membros'].navegarParaCelulaDoLider('${m.id}')" style="padding:var(--space-md);text-align:center;border-color:rgba(255,200,0,0.3);cursor:pointer;background:rgba(255,200,0,0.04);transition:transform 0.15s, border-color 0.15s;" title="Clique para abrir a Ficha da Célula deste líder">
-                        <span style="font-size:0.7rem;color:var(--warning);text-transform:uppercase;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;">
+                      <div class="card ficha-stat-card" onclick="WavePages['admin-membros'].navegarParaCelulaDoLider('${m.id}')" style="border-color:rgba(255,200,0,0.3);cursor:pointer;background:rgba(255,200,0,0.04);transition:transform 0.15s, border-color 0.15s;" title="Clique para abrir a Ficha da Célula deste líder">
+                        <span class="ficha-stat-label" style="color:var(--warning);display:flex;align-items:center;justify-content:center;gap:4px;">
                           <i data-lucide="crown" style="width:12px;height:12px;"></i> Discípulos Liderados
                         </span>
-                        <div style="font-size:1.1rem;font-weight:800;color:var(--white);margin:4px 0 2px 0;">${infoLider.totalDiscipulos} discípulo(s)</div>
-                        <span style="font-size:0.7rem;color:var(--warning);font-weight:600;display:block;margin-top:2px;">Ver Célula & Discípulos →</span>
+                        <div class="ficha-stat-value">${infoLider.totalDiscipulos} discípulo(s)</div>
+                        <span style="font-size:var(--fs-caption);color:var(--warning);font-weight:600;display:block;margin-top:2px;">Ver Célula & Discípulos →</span>
                       </div>
                     ` : ''}
                   </div>
 
                   <!-- Dados Cadastrais -->
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);font-size:0.85rem;">
+                  <div class="ficha-fields">
                     <div>
-                      <div style="font-size:0.72rem;color:var(--text-tertiary);">WHATSAPP</div>
-                      <strong style="color:var(--white);">${m.whatsapp || '—'}</strong>
+                      <div class="ficha-field-label">WHATSAPP</div>
+                      ${m.whatsapp ? `
+                        <a href="https://wa.me/${m.whatsapp.replace(/\D/g, '')}" target="_blank" class="ficha-field-value" style="color:var(--whatsapp);text-decoration:none;" title="Abrir conversa no WhatsApp">${m.whatsapp}</a>
+                      ` : `<strong class="ficha-field-value">—</strong>`}
                     </div>
                     <div>
-                      <div style="font-size:0.72rem;color:var(--text-tertiary);">LÍDER RESPONSÁVEL</div>
-                      <strong style="color:var(--white);">${m.lider || '—'}</strong>
+                      <div class="ficha-field-label">LÍDER RESPONSÁVEL</div>
+                      <strong class="ficha-field-value" ${liderResolvido ? `onclick="WavePages['admin-membros'].navegarParaFichaDoLiderResponsavel('${m.id}')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;" title="Clique para ver a ficha de ${liderResolvido.nome}"` : ''}>${m.lider || '—'}</strong>
                     </div>
                     <div>
-                      <div style="font-size:0.72rem;color:var(--text-tertiary);">DATA / TIPO DE INGRESSO</div>
-                      <strong style="color:var(--white);">${m.dataIngresso || '—'} (${m.tipoIngresso || 'Recepção'})</strong>
+                      <div class="ficha-field-label">DATA / TIPO DE INGRESSO</div>
+                      <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
+                        <strong class="ficha-field-value">${WaveData.formatarDataCurta(m.dataIngresso)}</strong>
+                        <span class="badge ${tipoIngressoBadge}">${m.tipoIngresso || 'Recepção'}</span>
+                      </div>
                     </div>
                     <div>
-                      <div style="font-size:0.72rem;color:var(--text-tertiary);">ENDEREÇO RESIDENCIAL</div>
-                      <strong style="color:var(--white);">${m.rua || '—'}, ${m.numero || 's/n'} ${m.complemento ? '(' + m.complemento + ')' : ''}</strong>
-                      <div style="font-size:0.75rem;color:var(--text-tertiary);">${m.bairro || '—'} - ${m.cidade || 'Mandaguari'}</div>
+                      <div class="ficha-field-label">ENDEREÇO RESIDENCIAL</div>
+                      <strong class="ficha-field-value">${m.rua || '—'}, ${m.numero || 's/n'} ${m.complemento ? '(' + m.complemento + ')' : ''}</strong>
+                      <div style="font-size:var(--fs-caption);color:var(--text-tertiary);">${m.bairro || '—'} - ${m.cidade || 'Mandaguari'}</div>
                     </div>
                   </div>
 
                   <!-- Células do Líder (se for líder) -->
                   ${m.eLider && m.celulas && m.celulas.length > 0 ? `
                     <div style="background:var(--bg-elevated);padding:var(--space-md);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
-                      <span style="font-size:0.75rem;color:var(--warning);font-weight:700;display:block;margin-bottom:var(--space-sm);">👑 CÉLULAS SOB SUA LIDERANÇA (${m.celulas.length})</span>
+                      <span class="ficha-section-title" style="color:var(--warning);">👑 CÉLULAS SOB SUA LIDERANÇA (${m.celulas.length})</span>
                       <div style="display:flex;flex-direction:column;gap:8px;">
                         ${m.celulas.map((c, i) => `
-                          <div style="padding:8px;background:var(--bg-card);border-radius:var(--radius-sm);font-size:0.8rem;border:1px solid var(--border-subtle);">
+                          <div onclick="WavePages['admin-membros'].navegarParaCelulaDoLider('${m.id}')" style="padding:8px;background:var(--bg-card);border-radius:var(--radius-sm);font-size:var(--fs-body);border:1px solid var(--border-subtle);cursor:pointer;transition:border-color 0.15s, background 0.15s;" title="Clique para abrir a Ficha da Célula">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px;">
                               <strong style="color:var(--white);">Célula ${i + 1} — ${c.finalidade}</strong>
                               ${c.finalidade !== 'Liderança' ? `
                                 <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
-                                  ${WaveData.renderFaixaEtariaBadges(c.faixaEtaria, 'font-size:0.65rem;')}
+                                  ${WaveData.renderFaixaEtariaBadges(c.faixaEtaria, 'font-size:var(--fs-caption);')}
                                 </div>
                               ` : ''}
                             </div>
-                            <div style="color:var(--text-secondary);font-size:0.75rem;">
+                            <div style="color:var(--text-secondary);font-size:var(--fs-label);">
                               📅 <strong>${c.diaSemana}</strong> às <strong>${c.horario}</strong>
                             </div>
-                            <div style="color:var(--text-tertiary);font-size:0.72rem;margin-top:2px;">
+                            <div style="color:var(--text-tertiary);font-size:var(--fs-caption);margin-top:2px;">
                               📍 ${c.tipoEndereco === 'outro' ? `${c.rua || ''} ${c.numero || ''}, ${c.bairro || ''} - ${c.cidade || 'Mandaguari'}` : 'Endereço Residencial do Líder'}
                             </div>
                           </div>
@@ -1742,11 +1759,12 @@ WavePages['admin-membros'] = {
     }
   },
 
-  abrirDetalhes(membroId) {
+  abrirDetalhes(membroId, origem = null) {
     const m = WaveData.getMembroById(membroId);
     if (m) {
       this._membroDetalhes = m;
       this._editandoMembro = false;
+      this._origemFicha = origem;
       WaveApp.renderCurrentPage();
     }
   },
@@ -1754,6 +1772,7 @@ WavePages['admin-membros'] = {
   fecharDetalhes() {
     this._membroDetalhes = null;
     this._editandoMembro = false;
+    this._origemFicha = null;
     WaveApp.renderCurrentPage();
   },
 
@@ -1763,15 +1782,46 @@ WavePages['admin-membros'] = {
     }
   },
 
+  // Volta para a ficha de origem (ex: Ficha da Célula ou outro Discípulo que abriu esta ficha)
+  voltarOrigem() {
+    const origem = this._origemFicha;
+    if (!origem) return this.fecharDetalhes();
+    this._membroDetalhes = null;
+    this._editandoMembro = false;
+    this._origemFicha = null;
+    if (origem.page === 'admin-membros') {
+      // Mesma página: reabre direto, sem precisar navegar/trocar de hash
+      this.abrirDetalhes(origem.id);
+      return;
+    }
+    WaveApp.navigate(origem.page);
+    setTimeout(() => {
+      if (WavePages[origem.page] && WavePages[origem.page].abrirFichaLider) {
+        WavePages[origem.page].abrirFichaLider(origem.id);
+      }
+    }, 60);
+  },
+
   // Melhoria 8: Navegar da Ficha do Membro (Líder) para a Ficha da Célula
   navegarParaCelulaDoLider(liderId) {
+    const origem = { page: 'admin-membros', id: this._membroDetalhes ? this._membroDetalhes.id : null };
     this.fecharDetalhes();
     WaveApp.navigate('admin-lideres');
     setTimeout(() => {
       if (WavePages['admin-lideres'] && WavePages['admin-lideres'].abrirFichaLider) {
-        WavePages['admin-lideres'].abrirFichaLider(liderId);
+        WavePages['admin-lideres'].abrirFichaLider(liderId, origem);
       }
     }, 60);
+  },
+
+  // Ficha do Discípulo -> Ficha do próprio Líder responsável (mesma página)
+  navegarParaFichaDoLiderResponsavel(membroId) {
+    const m = WaveData.getMembroById(membroId);
+    if (!m || !m.lider || m.lider === '—') return;
+    const lider = (m.liderId && WaveData.getMembroById(m.liderId)) || WaveData.getMembroByNome(m.lider);
+    if (!lider) return;
+    const origem = { page: 'admin-membros', id: m.id };
+    this.abrirDetalhes(lider.id, origem);
   },
 
   async toggleStatusMembro(membroId) {

@@ -17,6 +17,7 @@ WavePages['admin-lideres'] = {
   _showFiltrosDrawer: false,
   _showColunasDropdown: false,
   _liderSelecionado: null,
+  _origemFicha: null,
   _editandoLider: false,
   _fecharCelulaComRedistribuicao: null, // CT-CEL-02: Modal de redistribuição ao fechar célula com discípulos
 
@@ -478,7 +479,14 @@ WavePages['admin-lideres'] = {
         <div class="modal-sheet" style="max-width:600px;">
           <div class="sheet-handle"></div>
           <div class="sheet-header">
-            <h3 class="sheet-title">Ficha da Célula</h3>
+            <div class="sheet-header-left">
+              ${this._origemFicha ? `
+                <button class="sheet-back" onclick="WavePages['admin-lideres'].voltarOrigem()" title="Voltar">
+                  <i data-lucide="chevron-left" style="width:18px;height:18px;"></i>
+                </button>
+              ` : ''}
+              <h3 class="sheet-title">Ficha da Célula</h3>
+            </div>
             <button class="sheet-close" onclick="WavePages['admin-lideres'].fecharFicha()">
               <i data-lucide="x" style="width:18px;height:18px;"></i>
             </button>
@@ -492,45 +500,43 @@ WavePages['admin-lideres'] = {
 
             return `
               <div style="display:flex;flex-direction:column;gap:var(--space-md);max-height:75vh;overflow-y:auto;padding-right:4px;">
-                
+
                 <!-- Cabeçalho do Líder (Clicável -> Abre a Ficha do Membro do Líder) -->
-                <div onclick="WavePages['admin-lideres'].navegarParaFichaDoMembro('${l.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;transition:border-color 0.15s, background 0.15s;" title="Clique para ver os dados cadastrais deste líder">
-                  <div style="display:flex;align-items:center;gap:var(--space-md);min-width:0;flex:1;">
-                    <div style="width:50px;height:50px;border-radius:var(--radius-full);background:var(--bg-card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:var(--white);border:2px solid var(--border-medium);flex-shrink:0;">
-                      ${l.nome.charAt(0)}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                      <h2 style="font-size:1.1rem;font-weight:800;color:var(--white);">${l.nome} 👑</h2>
-                      <span style="font-size:0.75rem;color:var(--text-tertiary);">${l.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'} · ${l.bairro || 'Centro'} (${l.cidade || 'Mandaguari'})</span>
-                      <div style="font-size:0.75rem;color:var(--whatsapp);margin-top:2px;">📱 ${l.whatsapp || '—'}</div>
+                <div class="ficha-hero" onclick="WavePages['admin-lideres'].navegarParaFichaDoMembro('${l.id}')" style="padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;transition:border-color 0.15s, background 0.15s;" title="Clique para ver os dados cadastrais deste líder">
+                  <div class="ficha-avatar" style="--avatar-size:50px;background:var(--bg-card);">
+                    ${l.nome.charAt(0)}
+                  </div>
+                  <div class="ficha-hero-info">
+                    <h2 class="ficha-hero-name">${l.nome} 👑</h2>
+                    <span class="ficha-hero-meta">${l.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'} · ${l.bairro || 'Centro'} (${l.cidade || 'Mandaguari'})</span>
+                    <div style="font-size:var(--fs-label);margin-top:2px;">
+                      📱 ${l.whatsapp ? `<a href="https://wa.me/${l.whatsapp.replace(/\D/g, '')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--whatsapp);text-decoration:none;" title="Abrir conversa no WhatsApp">${l.whatsapp}</a>` : `<span style="color:var(--whatsapp);">—</span>`}
                     </div>
                   </div>
-                  <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;color:var(--text-tertiary);font-size:0.75rem;padding-left:8px;">
-                    <span>Ver dados →</span>
-                  </div>
+                  <span style="font-size:var(--fs-label);color:var(--text-tertiary);">Ver dados →</span>
                 </div>
 
                 <!-- Células sob Liderança (Ponto 1 e Ponto 20) -->
                 <div>
-                  <h4 style="font-size:0.85rem;font-weight:700;color:var(--warning);margin-bottom:6px;">Células Lideradas (${celulas.length})</h4>
+                  <h4 class="ficha-section-title" style="color:var(--warning);">Células Lideradas (${celulas.length})</h4>
                   <div style="display:flex;flex-direction:column;gap:8px;">
                     ${celulas.map((c, i) => `
-                      <div style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;">
+                      <div style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:var(--fs-body);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                           <strong style="color:var(--white);">Célula ${i + 1} — ${c.finalidade}</strong>
                           <div style="display:flex;align-items:center;gap:6px;">
                             <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                              ${WaveData.renderFaixaEtariaBadges(c.faixaEtaria, 'font-size:0.65rem;')}
+                              ${WaveData.renderFaixaEtariaBadges(c.faixaEtaria, 'font-size:var(--fs-caption);')}
                             </div>
-                            <button type="button" class="btn btn-ghost" onclick="WavePages['admin-lideres'].fecharCelulaIndividualClick('${l.id}', '${c.id}')" style="color:var(--danger);font-size:0.7rem;padding:2px 6px;height:auto;min-height:unset;" title="Fechar/Encerrar esta Célula (Ponto 20)">
+                            <button type="button" class="btn btn-ghost" onclick="WavePages['admin-lideres'].fecharCelulaIndividualClick('${l.id}', '${c.id}')" style="color:var(--danger);font-size:var(--fs-caption);padding:2px 6px;height:auto;min-height:unset;" title="Fechar/Encerrar esta Célula (Ponto 20)">
                               <i data-lucide="x-circle" style="width:12px;height:12px;"></i> Fechar
                             </button>
                           </div>
                         </div>
-                        <div style="color:var(--text-secondary);font-size:0.75rem;">
+                        <div style="color:var(--text-secondary);font-size:var(--fs-label);">
                           📅 <strong>Toda ${c.diaSemana}</strong> às <strong>${c.horario}</strong>
                         </div>
-                        <div style="color:var(--text-tertiary);font-size:0.72rem;margin-top:2px;">
+                        <div style="color:var(--text-tertiary);font-size:var(--fs-caption);margin-top:2px;">
                           📍 ${c.tipoEndereco === 'outro' ? `${c.rua || ''} ${c.numero || ''}, ${c.bairro || ''} - ${c.cidade || 'Mandaguari'}` : 'Endereço Residencial do Líder'}
                         </div>
                       </div>
@@ -540,9 +546,9 @@ WavePages['admin-lideres'] = {
 
                 <!-- Lista de Discípulos Ativos (Ponto 10: Sem duplicatas) -->
                 <div>
-                  <h4 style="font-size:0.85rem;font-weight:700;color:var(--white);margin-bottom:6px;">Discípulos Ativos (${discipulos.length})</h4>
+                  <h4 class="ficha-section-title">Discípulos Ativos (${discipulos.length})</h4>
                   ${discipulos.length === 0 ? `
-                    <div style="text-align:center;padding:var(--space-md);color:var(--text-tertiary);font-size:0.8rem;background:var(--bg-elevated);border-radius:var(--radius-md);">
+                    <div style="text-align:center;padding:var(--space-md);color:var(--text-tertiary);font-size:var(--fs-label);background:var(--bg-elevated);border-radius:var(--radius-md);">
                       Nenhum discípulo ativo vinculado a este líder.
                     </div>
                   ` : `
@@ -550,19 +556,19 @@ WavePages['admin-lideres'] = {
                       ${discipulos.map(d => `
                         <div onclick="WavePages['admin-lideres'].navegarParaFichaDoMembro('${d.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;transition:border-color 0.15s, background 0.15s;" title="Clique para ver a Ficha deste membro">
                           <div style="display:flex;align-items:center;gap:8px;">
-                            <div style="width:30px;height:30px;border-radius:var(--radius-full);background:var(--bg-card);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;border:1px solid var(--border-subtle);">
+                            <div class="ficha-avatar" style="--avatar-size:30px;background:var(--bg-card);">
                               ${d.nome.charAt(0)}
                             </div>
                             <div>
-                              <strong style="font-size:0.82rem;color:var(--white);display:block;">${d.nome} ${d.eLider ? '<span style="color:var(--warning);font-size:0.65rem;">👑 (Líder)</span>' : ''}</strong>
-                              <span style="font-size:0.68rem;color:var(--text-tertiary);">${d.whatsapp || 'Sem WhatsApp'}</span>
+                              <strong style="font-size:var(--fs-body);color:var(--white);display:block;">${d.nome} ${d.eLider ? '<span style="color:var(--warning);font-size:var(--fs-caption);">👑 (Líder)</span>' : ''}</strong>
+                              ${d.whatsapp ? `<a href="https://wa.me/${d.whatsapp.replace(/\D/g, '')}" target="_blank" onclick="event.stopPropagation()" style="font-size:var(--fs-caption);color:var(--whatsapp);text-decoration:none;" title="Abrir conversa no WhatsApp">${d.whatsapp}</a>` : `<span style="font-size:var(--fs-caption);color:var(--text-tertiary);">Sem WhatsApp</span>`}
                             </div>
                           </div>
                           <div style="display:flex;align-items:center;gap:8px;">
-                            <span class="status-badge-ativo" style="font-size:0.65rem;padding:2px 8px;">
+                            <span class="status-badge-ativo" style="font-size:var(--fs-caption);padding:2px 8px;">
                               Ativo
                             </span>
-                            <span style="font-size:0.72rem;color:var(--text-tertiary);">Ver ficha →</span>
+                            <span style="font-size:var(--fs-caption);color:var(--text-tertiary);">Ver ficha →</span>
                           </div>
                         </div>
                       `).join('')}
@@ -864,11 +870,12 @@ WavePages['admin-lideres'] = {
     WaveApp.renderCurrentPage();
   },
 
-  abrirFichaLider(liderId) {
+  abrirFichaLider(liderId, origem = null) {
     const l = WaveData.getAllLideresAtivos().find(item => item.id === liderId);
     if (l) {
       this._liderSelecionado = l;
       this._editandoLider = false;
+      this._origemFicha = origem;
       WaveApp.renderCurrentPage();
     }
   },
@@ -876,6 +883,7 @@ WavePages['admin-lideres'] = {
   fecharFicha() {
     this._liderSelecionado = null;
     this._editandoLider = false;
+    this._origemFicha = null;
     WaveApp.renderCurrentPage();
   },
 
@@ -885,13 +893,29 @@ WavePages['admin-lideres'] = {
     }
   },
 
+  // Volta para a ficha de origem (ex: Ficha do Discípulo que abriu esta Ficha da Célula)
+  voltarOrigem() {
+    const origem = this._origemFicha;
+    if (!origem) return this.fecharFicha();
+    this._liderSelecionado = null;
+    this._editandoLider = false;
+    this._origemFicha = null;
+    WaveApp.navigate(origem.page);
+    setTimeout(() => {
+      if (WavePages[origem.page] && WavePages[origem.page].abrirDetalhes) {
+        WavePages[origem.page].abrirDetalhes(origem.id);
+      }
+    }, 60);
+  },
+
   // Melhoria 9: Navegar da Ficha da Célula para a Ficha do Membro/Discípulo
   navegarParaFichaDoMembro(membroId) {
+    const origem = { page: 'admin-lideres', id: this._liderSelecionado ? this._liderSelecionado.id : null };
     this.fecharFicha();
     WaveApp.navigate('admin-membros');
     setTimeout(() => {
       if (WavePages['admin-membros'] && WavePages['admin-membros'].abrirDetalhes) {
-        WavePages['admin-membros'].abrirDetalhes(membroId);
+        WavePages['admin-membros'].abrirDetalhes(membroId, origem);
       }
     }, 60);
   },
