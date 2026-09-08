@@ -727,7 +727,7 @@ WavePages['admin-membros'] = {
                   <!-- Hero do Perfil -->
                   <div class="ficha-hero">
                     <div class="ficha-avatar">
-                      ${m.nome.charAt(0)}
+                      ${WaveData.avatarConteudo(m)}
                     </div>
                     <div class="ficha-hero-info">
                       <h2 class="ficha-hero-name">${m.nome} ${m.eLider ? '<span style="color:var(--warning);font-size:var(--fs-label);font-weight:700;">👑 (Líder)</span>' : ''}</h2>
@@ -1166,8 +1166,8 @@ WavePages['admin-membros'] = {
         <tr style="cursor:pointer;" onclick="WavePages['admin-membros'].abrirDetalhes('${m.id}')">
           <td>
             <div style="display:flex;align-items:center;gap:10px;">
-              <div style="width:34px;height:34px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;">
-                ${m.nome.charAt(0)}
+              <div style="width:34px;height:34px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;overflow:hidden;">
+                ${WaveData.avatarConteudo(m)}
               </div>
               <div style="min-width:0;">
                 <strong style="display:block;font-size:0.85rem;color:var(--white);">${nomeExibicao} ${m.eLider ? '<span style="font-size:0.65rem;color:var(--warning);font-weight:700;">(Líder)</span>' : ''}</strong>
@@ -1243,8 +1243,8 @@ WavePages['admin-membros'] = {
       return `
         <div class="card" onclick="WavePages['admin-membros'].abrirDetalhes('${m.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border-subtle);gap:10px;cursor:pointer;">
           <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
-            <div style="width:34px;height:34px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0;color:var(--white);border:1px solid var(--border-subtle);">
-              ${m.nome.charAt(0)}
+            <div style="width:34px;height:34px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0;color:var(--white);border:1px solid var(--border-subtle);overflow:hidden;">
+              ${WaveData.avatarConteudo(m)}
             </div>
             <div style="min-width:0;flex:1;">
               <div style="display:flex;align-items:center;gap:6px;">

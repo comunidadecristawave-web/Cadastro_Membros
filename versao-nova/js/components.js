@@ -46,8 +46,8 @@ window.WaveComponents = {
 
     return `
       <div class="birthday-card animate-in">
-        <div style="width:36px;height:36px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;color:var(--white);flex-shrink:0;">
-          ${membro.nome.charAt(0)}
+        <div style="width:36px;height:36px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;color:var(--white);flex-shrink:0;overflow:hidden;">
+          ${WaveData.avatarConteudo(membro)}
         </div>
         <span class="birthday-name">${membro.nome}</span>
         <span class="birthday-date">${dateLabel}</span>

@@ -18,6 +18,21 @@ window.WaveData = {
   membros: [],
   celulas: [],
 
+  // Conteúdo interno de um círculo de avatar: foto do membro (ex: selfie do
+  // formulário público) se existir, senão a inicial do nome. Reutilizado em
+  // todo lugar que hoje renderiza `${membro.nome.charAt(0)}` — o container
+  // (.ficha-avatar ou similar) precisa de overflow:hidden pra recortar em círculo.
+  avatarConteudo(nomeOuMembro, fotoUrl) {
+    const isObj = nomeOuMembro && typeof nomeOuMembro === 'object';
+    const nome = isObj ? nomeOuMembro.nome : nomeOuMembro;
+    const foto = isObj ? (nomeOuMembro.foto || nomeOuMembro.foto_url) : fotoUrl;
+    const inicial = (nome || '?').charAt(0).toUpperCase();
+    if (foto) {
+      return `<img src="${foto}" alt="${inicial}" style="width:100%;height:100%;object-fit:cover;">`;
+    }
+    return inicial;
+  },
+
   igrejaStats: {
     totalMembros: 0,
     totalCelulas: 0,

@@ -204,8 +204,8 @@ WavePages.admin = {
       return `
                     <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--border-subtle);gap:12px;">
                       <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
-                        <div style="width:36px;height:36px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;color:var(--white);">
-                          ${m.nome.charAt(0)}
+                        <div style="width:36px;height:36px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;color:var(--white);overflow:hidden;">
+                          ${WaveData.avatarConteudo(m)}
                         </div>
                         <div style="min-width:0;flex:1;">
                           <strong style="font-size:0.88rem;color:var(--white);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.nome}</strong>

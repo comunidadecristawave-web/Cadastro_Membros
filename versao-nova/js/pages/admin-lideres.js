@@ -504,7 +504,7 @@ WavePages['admin-lideres'] = {
                 <!-- Cabeçalho do Líder (Clicável -> Abre a Ficha do Membro do Líder) -->
                 <div class="ficha-hero" onclick="WavePages['admin-lideres'].navegarParaFichaDoMembro('${l.id}')" style="padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;transition:border-color 0.15s, background 0.15s;" title="Clique para ver os dados cadastrais deste líder">
                   <div class="ficha-avatar" style="--avatar-size:50px;background:var(--bg-card);">
-                    ${l.nome.charAt(0)}
+                    ${WaveData.avatarConteudo(l)}
                   </div>
                   <div class="ficha-hero-info">
                     <h2 class="ficha-hero-name">${l.nome} 👑</h2>
@@ -557,7 +557,7 @@ WavePages['admin-lideres'] = {
                         <div onclick="WavePages['admin-lideres'].navegarParaFichaDoMembro('${d.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;transition:border-color 0.15s, background 0.15s;" title="Clique para ver a Ficha deste membro">
                           <div style="display:flex;align-items:center;gap:8px;">
                             <div class="ficha-avatar" style="--avatar-size:30px;background:var(--bg-card);">
-                              ${d.nome.charAt(0)}
+                              ${WaveData.avatarConteudo(d)}
                             </div>
                             <div>
                               <strong style="font-size:var(--fs-body);color:var(--white);display:block;">${d.nome} ${d.eLider ? '<span style="color:var(--warning);font-size:var(--fs-caption);">👑 (Líder)</span>' : ''}</strong>
@@ -623,8 +623,8 @@ WavePages['admin-lideres'] = {
                   ${discipulos.map((d, idx) => `
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);padding:10px 12px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);flex-wrap:wrap;">
                       <div style="display:flex;align-items:center;gap:8px;min-width:180px;">
-                        <div style="width:28px;height:28px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;border:1px solid var(--border-subtle);">
-                          ${d.nome.charAt(0)}
+                        <div style="width:28px;height:28px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;border:1px solid var(--border-subtle);overflow:hidden;">
+                          ${WaveData.avatarConteudo(d)}
                         </div>
                         <div>
                           <strong style="font-size:0.82rem;color:var(--white);display:block;">${d.nome}</strong>
@@ -677,8 +677,8 @@ WavePages['admin-lideres'] = {
           <div>
             <!-- Cabeçalho do Card da Célula -->
             <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-md);">
-              <div style="width:46px;height:46px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:var(--white);border:2px solid var(--border-medium);flex-shrink:0;">
-                ${c.liderNome.charAt(0)}
+              <div style="width:46px;height:46px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:var(--white);border:2px solid var(--border-medium);flex-shrink:0;overflow:hidden;">
+                ${WaveData.avatarConteudo(c.liderNome, (WaveData.getMembroById(c.liderId) || {}).foto)}
               </div>
               <div style="flex:1;min-width:0;">
                 <h3 style="font-size:1.05rem;font-weight:800;color:var(--white);">${c.liderNome} 👑</h3>
@@ -739,8 +739,8 @@ WavePages['admin-lideres'] = {
       return `
         <div class="card" onclick="WavePages['admin-lideres'].abrirFichaLider('${c.liderId}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--border-subtle);gap:12px;cursor:pointer;">
           <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
-            <div style="width:36px;height:36px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;color:var(--white);border:1px solid var(--border-subtle);">
-              ${c.liderNome.charAt(0)}
+            <div style="width:36px;height:36px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;color:var(--white);border:1px solid var(--border-subtle);overflow:hidden;">
+              ${WaveData.avatarConteudo(c.liderNome, (WaveData.getMembroById(c.liderId) || {}).foto)}
             </div>
             <div style="min-width:0;flex:1;">
               <div style="display:flex;align-items:center;gap:6px;">

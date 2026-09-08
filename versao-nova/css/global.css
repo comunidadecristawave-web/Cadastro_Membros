@@ -586,6 +586,7 @@ input, textarea, select { font-family: inherit; }
   color: var(--white);
   border: 2px solid var(--border-medium);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .ficha-hero {
