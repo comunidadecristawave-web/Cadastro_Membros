@@ -43,6 +43,7 @@ window.WaveApp = {
   _currentPage: 'login',
   _pageParam: null,
   _history: [],
+  PUBLIC_PAGES: ['login', 'cadastro-publico'],
 
   init() {
     WaveTheme.init();
@@ -56,7 +57,7 @@ window.WaveApp = {
       this._currentPage = WaveAuth.isAuthenticated() ? 'admin' : 'login';
     }
 
-    if (!WaveAuth.isAuthenticated() && this._currentPage !== 'login') {
+    if (!WaveAuth.isAuthenticated() && !WaveApp.PUBLIC_PAGES.includes(this._currentPage)) {
       this._currentPage = 'login';
       window.location.hash = 'login';
     }
@@ -70,7 +71,7 @@ window.WaveApp = {
       this._currentPage = parts[0] || 'login';
       this._pageParam = parts[1] || null;
 
-      if (!WaveAuth.isAuthenticated() && this._currentPage !== 'login') {
+      if (!WaveAuth.isAuthenticated() && !WaveApp.PUBLIC_PAGES.includes(this._currentPage)) {
         this._currentPage = 'login';
         window.location.hash = 'login';
       }
@@ -153,7 +154,8 @@ window.WaveApp = {
   updateNav() {
     const isLogin = this._currentPage === 'login';
     const isWelcome = this._currentPage === 'boas-vindas';
-    const isCleanLayout = isLogin || isWelcome;
+    const isCadastroPublico = this._currentPage === 'cadastro-publico';
+    const isCleanLayout = isLogin || isWelcome || isCadastroPublico;
     const adminNav = document.getElementById('admin-nav');
     const adminTopNavbar = document.getElementById('admin-top-navbar');
     const mobileHeader = document.getElementById('mobile-header');

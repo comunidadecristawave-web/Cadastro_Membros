@@ -21,6 +21,16 @@
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Link amigável para o formulário público de autocadastro: /cadastro -> #cadastro-publico -->
+  <script>
+    (function () {
+      var path = location.pathname.replace(/\/$/, '');
+      if (path === '/cadastro' && !location.hash) {
+        location.replace('/#cadastro-publico');
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -155,6 +165,9 @@
   <script src="js/pages/admin-membros.js"></script>
   <script src="js/pages/admin-lideres.js"></script>
   <script src="js/pages/admin-usuarios.js"></script>
+
+  <!-- Formulário Público de Autocadastro (sem login) -->
+  <script src="js/pages/cadastro-publico.js"></script>
   <script src="js/pages/importacao.js"></script>
 
   <!-- Controller Principal SPA -->

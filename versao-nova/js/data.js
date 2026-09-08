@@ -379,6 +379,25 @@ window.WaveData = {
     });
   },
 
+  // Normaliza nome pra comparação aproximada: remove acentos, caixa e espaços extras
+  normalizarNomeAproximado(nome) {
+    return (nome || '')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+  },
+
+  // Formulário público: nome aproximado (acento/caixa/espaço não importam) + data de nascimento exata
+  isDuplicadoAproximado(nome, dataNasc) {
+    if (!nome || !dataNasc) return false;
+    const nClean = this.normalizarNomeAproximado(nome);
+    return this.membros.some(m => {
+      return this.normalizarNomeAproximado(m.nome) === nClean && m.dataNascimento === dataNasc;
+    });
+  },
+
   // Ponto 6: Campos calculados
   calcIdade(dataNascimento) {
     if (!dataNascimento) return 0;
@@ -740,7 +759,10 @@ window.WaveData = {
       e_lider: membro.eLider ?? false,
       lider: membro.lider || '—',
       discipulador_id: discipuladorId,
-      celulas_json: membro.celulas || []
+      celulas_json: membro.celulas || [],
+      foto_url: membro.foto || null,
+      consentimento_aceito: membro.consentimentoAceito || false,
+      consentimento_aceito_em: membro.consentimentoAceitoEm || null
     };
 
     if (window.WaveSupabase && window.supabaseClient) {
