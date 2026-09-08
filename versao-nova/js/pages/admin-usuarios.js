@@ -516,15 +516,16 @@ WavePages['admin-usuarios'] = {
 
     if (!confirmar) return;
 
-    if (window.supabaseClient) {
-      try {
-        const { error } = await supabaseClient.from('usuarios').delete().eq('id', u.id);
-        if (error) {
-          console.warn('Supabase delete usuário erro:', error);
-        }
-      } catch (err) {
-        console.warn('Supabase delete usuário erro:', err);
-      }
+    if (!window.supabaseClient) {
+      await WaveApp.alert('Sem conexão com o banco de dados. Verifique sua internet e tente novamente.', 'Falha ao Excluir', 'danger');
+      return;
+    }
+
+    const { error } = await supabaseClient.from('usuarios').delete().eq('id', u.id);
+    if (error) {
+      console.error('Supabase delete usuário erro:', error);
+      await WaveApp.alert(`Não foi possível excluir o administrador: ${error.message}.`, 'Falha ao Excluir', 'danger');
+      return;
     }
 
     WaveAuth.killSessionIfCurrentUser(u.id, u.email);
@@ -544,31 +545,38 @@ WavePages['admin-usuarios'] = {
     const novaSenha = data.get('nova_senha');
 
     const u = this._usuariosList.find(item => item.id === this._editingUser.id);
-    if (u) {
-      u.nome = novoNome;
-      u.email = novoEmail;
+    if (!u) return;
 
-      if (window.supabaseClient) {
-        try {
-          const updatePayload = { nome: novoNome, email: novoEmail };
-          if (novaSenha && novaSenha.trim()) {
-            updatePayload.senha_hash = novaSenha.trim();
-          }
-          await supabaseClient.from('usuarios').update(updatePayload).eq('id', u.id);
-        } catch (err) {
-          console.warn('Supabase update erro:', err);
-        }
-      }
-
-      this._showEditModal = false;
-      this._editingUser = null;
-      WaveApp.showToast(`✅ Dados de ${novoNome} atualizados com sucesso!`, 'success');
-      WaveApp.renderCurrentPage();
+    if (!window.supabaseClient) {
+      await WaveApp.alert('Sem conexão com o banco de dados. Verifique sua internet e tente novamente.', 'Falha ao Atualizar', 'danger');
+      return;
     }
+
+    const updatePayload = { nome: novoNome, email: novoEmail };
+    if (novaSenha && novaSenha.trim()) {
+      updatePayload.senha_hash = novaSenha.trim();
+    }
+
+    const { error } = await supabaseClient.from('usuarios').update(updatePayload).eq('id', u.id);
+    if (error) {
+      console.error('Supabase update erro:', error);
+      await WaveApp.alert(`Não foi possível atualizar os dados: ${error.message}.`, 'Falha ao Atualizar', 'danger');
+      return;
+    }
+
+    u.nome = novoNome;
+    u.email = novoEmail;
+
+    this._showEditModal = false;
+    this._editingUser = null;
+    WaveApp.showToast(`✅ Dados de ${novoNome} atualizados com sucesso!`, 'success');
+    WaveApp.renderCurrentPage();
   },
 
   async salvarNovoUsuario(e) {
     e.preventDefault();
+    if (this._salvandoUsuario) return;
+
     const form = e.target;
     const data = new FormData(form);
 
@@ -582,37 +590,48 @@ WavePages['admin-usuarios'] = {
       return;
     }
 
-    const payload = {
-      id: 'u-' + Date.now(),
-      nome,
-      email,
-      role: 'ADMIN',
-      ativo,
-      senha_hash: senha
-    };
-
-    if (window.supabaseClient) {
-      try {
-        const { data: saved, error } = await supabaseClient.from('usuarios').insert([payload]).select().single();
-        if (saved && !error) {
-          payload.id = saved.id;
-        }
-      } catch (err) {
-        console.warn('Supabase insert usuário erro:', err);
-      }
+    if (!window.supabaseClient) {
+      await WaveApp.alert('Sem conexão com o banco de dados. Verifique sua internet e tente novamente.', 'Falha ao Cadastrar', 'danger');
+      return;
     }
 
-    this._usuariosList.push({
-      id: payload.id,
-      email: payload.email,
-      nome: payload.nome,
-      role: 'ADMIN',
-      ativo: payload.ativo,
-      criadoEm: new Date().toISOString().split('T')[0]
-    });
+    // Não envia id: a coluna é UUID gerado pelo próprio Supabase, não uma string local.
+    const payload = { nome, email, role: 'ADMIN', ativo, senha_hash: senha };
 
-    this._showNovoModal = false;
-    WaveApp.showToast(`✅ Administrador ${nome} cadastrado com sucesso!`, 'success');
-    WaveApp.renderCurrentPage();
+    this._salvandoUsuario = true;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Salvando...</span>';
+    }
+
+    try {
+      const { data: saved, error } = await supabaseClient.from('usuarios').insert([payload]).select().single();
+      if (error || !saved) {
+        console.error('Supabase insert usuário erro:', error);
+        await WaveApp.alert(`Não foi possível cadastrar o administrador: ${error ? error.message : 'erro desconhecido'}.`, 'Falha ao Cadastrar', 'danger');
+        return;
+      }
+
+      this._usuariosList.push({
+        id: saved.id,
+        email: saved.email,
+        nome: saved.nome,
+        role: 'ADMIN',
+        ativo: saved.ativo,
+        criadoEm: new Date().toISOString().split('T')[0]
+      });
+
+      this._showNovoModal = false;
+      WaveApp.showToast(`✅ Administrador ${nome} cadastrado com sucesso!`, 'success');
+      WaveApp.renderCurrentPage();
+    } finally {
+      this._salvandoUsuario = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+      }
+    }
   }
 };
