@@ -43,7 +43,29 @@ WavePages['cadastro-publico'] = {
     }
 
     return `
-      <div class="login-container animate-in" style="max-width:480px;padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
+      <style>
+        /* Campos abaixo de 16px disparam zoom automático no iOS Safari ao focar,
+           deixando a tela "quebrada" até a pessoa dar zoom out manualmente. */
+        .cadastro-publico-page input,
+        .cadastro-publico-page select,
+        .cadastro-publico-page textarea {
+          font-size: 16px !important;
+        }
+        @media (max-width: 480px) {
+          .cadastro-publico-page.login-container {
+            max-width: 100% !important;
+            padding-left: var(--space-md) !important;
+            padding-right: var(--space-md) !important;
+          }
+          .cadastro-publico-page .login-card {
+            padding: var(--space-lg) var(--space-md) !important;
+          }
+          .cadastro-publico-page select {
+            text-overflow: ellipsis;
+          }
+        }
+      </style>
+      <div class="login-container cadastro-publico-page animate-in" style="max-width:480px;padding-top:var(--space-xl);padding-bottom:var(--space-2xl);">
 
         <div class="login-brand">
           <img src="imagens/Logo-Wave-Vertical.png" alt="Comunidade Wave" style="height:90px;width:auto;object-fit:contain;margin-bottom:var(--space-sm);filter:drop-shadow(0 0 24px rgba(255,255,255,0.18));">
@@ -254,7 +276,7 @@ WavePages['cadastro-publico'] = {
     const valorAnterior = select.value;
 
     if (!sexo) {
-      select.innerHTML = `<option value="" selected disabled>Selecione o sexo do discípulo primeiro</option>`;
+      select.innerHTML = `<option value="" selected disabled>Selecione o sexo primeiro</option>`;
       return;
     }
 
