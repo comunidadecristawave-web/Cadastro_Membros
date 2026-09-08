@@ -237,6 +237,47 @@ window.WaveApp = {
     if (pill) pill.classList.remove('open');
   },
 
+  // Amplia a foto de um avatar (ex: selfie do formulário público) em tela cheia,
+  // pra identificação visual rápida no dia a dia — chamado a partir de qualquer
+  // avatar que tenha foto (ver WaveData.avatarConteudo).
+  verFotoGrande(fotoUrl, nome = '') {
+    if (!fotoUrl) return;
+    this.fecharFotoGrande();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'wave-foto-grande-overlay';
+    overlay.className = 'wave-foto-overlay';
+    overlay.innerHTML = `
+      <div class="wave-foto-card" onclick="event.stopPropagation()">
+        <button type="button" class="wave-foto-close" onclick="WaveApp.fecharFotoGrande()" aria-label="Fechar">
+          <i data-lucide="x" style="width:20px;height:20px;"></i>
+        </button>
+        <img src="${fotoUrl}" alt="${this.escapeHTML(nome)}">
+        ${nome ? `<div class="wave-foto-nome">${this.escapeHTML(nome)}</div>` : ''}
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    if (window.lucide) lucide.createIcons();
+    requestAnimationFrame(() => overlay.classList.add('open'));
+
+    overlay.addEventListener('click', () => this.fecharFotoGrande());
+    this._fotoGrandeKeyHandler = (e) => {
+      if (e.key === 'Escape') this.fecharFotoGrande();
+    };
+    document.addEventListener('keydown', this._fotoGrandeKeyHandler);
+  },
+
+  fecharFotoGrande() {
+    const overlay = document.getElementById('wave-foto-grande-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    if (this._fotoGrandeKeyHandler) {
+      document.removeEventListener('keydown', this._fotoGrandeKeyHandler);
+      this._fotoGrandeKeyHandler = null;
+    }
+    setTimeout(() => overlay.remove(), 200);
+  },
+
   showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;

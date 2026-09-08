@@ -28,7 +28,8 @@ window.WaveData = {
     const foto = isObj ? (nomeOuMembro.foto || nomeOuMembro.foto_url) : fotoUrl;
     const inicial = (nome || '?').charAt(0).toUpperCase();
     if (foto) {
-      return `<img src="${foto}" alt="${inicial}" style="width:100%;height:100%;object-fit:cover;">`;
+      const nomeSeguro = window.WaveApp ? WaveApp.escapeHTML(nome || '') : (nome || '');
+      return `<img src="${foto}" alt="${nomeSeguro}" title="Ver foto de ${nomeSeguro}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="event.stopPropagation(); WaveApp.verFotoGrande(this.src, this.alt);">`;
     }
     return inicial;
   },
