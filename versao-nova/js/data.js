@@ -390,12 +390,14 @@ window.WaveData = {
   },
 
   // Formulário público: nome aproximado (acento/caixa/espaço não importam) + data de nascimento exata
-  isDuplicadoAproximado(nome, dataNasc) {
-    if (!nome || !dataNasc) return false;
+  encontrarDuplicadoAproximado(nome, dataNasc) {
+    if (!nome || !dataNasc) return null;
     const nClean = this.normalizarNomeAproximado(nome);
-    return this.membros.some(m => {
-      return this.normalizarNomeAproximado(m.nome) === nClean && m.dataNascimento === dataNasc;
-    });
+    return this.membros.find(m => this.normalizarNomeAproximado(m.nome) === nClean && m.dataNascimento === dataNasc) || null;
+  },
+
+  isDuplicadoAproximado(nome, dataNasc) {
+    return !!this.encontrarDuplicadoAproximado(nome, dataNasc);
   },
 
   // Ponto 6: Campos calculados
@@ -813,7 +815,10 @@ window.WaveData = {
       e_lider: dadosAtualizados.eLider !== undefined ? dadosAtualizados.eLider : (this.membros[idx].eLider ?? false),
       lider: novoLiderNome,
       discipulador_id: discipuladorId,
-      celulas_json: dadosAtualizados.celulas !== undefined ? dadosAtualizados.celulas : (this.membros[idx].celulas || [])
+      celulas_json: dadosAtualizados.celulas !== undefined ? dadosAtualizados.celulas : (this.membros[idx].celulas || []),
+      foto_url: dadosAtualizados.foto !== undefined ? dadosAtualizados.foto : (this.membros[idx].foto || null),
+      consentimento_aceito: dadosAtualizados.consentimentoAceito !== undefined ? dadosAtualizados.consentimentoAceito : (this.membros[idx].consentimentoAceito || false),
+      consentimento_aceito_em: dadosAtualizados.consentimentoAceitoEm !== undefined ? dadosAtualizados.consentimentoAceitoEm : (this.membros[idx].consentimentoAceitoEm || null)
     };
 
     if (window.WaveSupabase && window.supabaseClient) {

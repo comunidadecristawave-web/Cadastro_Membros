@@ -480,16 +480,14 @@ WavePages['cadastro-publico'] = {
         }
       }
 
-      if (WaveData.isDuplicadoAproximado(nome, dataNascimento)) {
-        mostrarErro('Já existe um cadastro com esse nome e data de nascimento. Se os dados precisam ser corrigidos, procure a secretaria ou o seu líder de célula.');
-        return;
-      }
+      // Duplicata (nome aproximado + data de nascimento exata): atualiza o cadastro existente
+      // em vez de criar um novo, sobrescrevendo os dados antigos com os novos do formulário.
+      const duplicado = WaveData.encontrarDuplicadoAproximado(nome, dataNascimento);
 
       const payload = {
         nome,
         whatsapp,
         dataNascimento,
-        dataIngresso: new Date().toISOString().split('T')[0],
         tipoIngresso,
         sexo,
         rua,
@@ -518,7 +516,13 @@ WavePages['cadastro-publico'] = {
         status: 'ATIVO'
       };
 
-      const res = await WaveData.addMembro(payload);
+      let res;
+      if (duplicado) {
+        res = await WaveData.updateMembro(duplicado.id, payload);
+      } else {
+        res = await WaveData.addMembro({ ...payload, dataIngresso: new Date().toISOString().split('T')[0] });
+      }
+
       if (!res.ok) {
         mostrarErro(`Não foi possível concluir seu cadastro: ${res.message}. Tente novamente ou procure a secretaria.`);
         return;
