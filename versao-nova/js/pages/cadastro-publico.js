@@ -480,9 +480,9 @@ WavePages['cadastro-publico'] = {
         }
       }
 
-      // Duplicata (nome aproximado + data de nascimento exata): atualiza o cadastro existente
-      // em vez de criar um novo, sobrescrevendo os dados antigos com os novos do formulário.
-      const duplicado = WaveData.encontrarDuplicadoAproximado(nome, dataNascimento);
+      // Duplicata (nome aproximado OU mesmo WhatsApp, + data de nascimento exata): atualiza
+      // o cadastro existente em vez de criar um novo, sobrescrevendo com os dados do formulário.
+      const duplicado = WaveData.encontrarDuplicadoAproximado(nome, dataNascimento, whatsapp);
 
       const payload = {
         nome,

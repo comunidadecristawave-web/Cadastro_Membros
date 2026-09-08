@@ -389,15 +389,24 @@ window.WaveData = {
       .replace(/\s+/g, ' ');
   },
 
-  // Formulário público: nome aproximado (acento/caixa/espaço não importam) + data de nascimento exata
-  encontrarDuplicadoAproximado(nome, dataNasc) {
-    if (!nome || !dataNasc) return null;
+  // Formulário público: mesma data de nascimento + (nome aproximado OU mesmo WhatsApp).
+  // Nome sozinho falha quando a pessoa já está cadastrada com nome abreviado/apelido
+  // (ex: "Thiago Henrique" no admin vs "Thiago Henrique de Oliveira" no formulário) —
+  // o WhatsApp varia muito menos que a forma como alguém escreve o próprio nome.
+  encontrarDuplicadoAproximado(nome, dataNasc, whatsapp = '') {
+    if (!dataNasc) return null;
     const nClean = this.normalizarNomeAproximado(nome);
-    return this.membros.find(m => this.normalizarNomeAproximado(m.nome) === nClean && m.dataNascimento === dataNasc) || null;
+    const whatsClean = (whatsapp || '').replace(/\D/g, '');
+    return this.membros.find(m => {
+      if (m.dataNascimento !== dataNasc) return false;
+      const nomeIgual = nClean && this.normalizarNomeAproximado(m.nome) === nClean;
+      const whatsIgual = whatsClean && (m.whatsapp || '').replace(/\D/g, '') === whatsClean;
+      return nomeIgual || whatsIgual;
+    }) || null;
   },
 
-  isDuplicadoAproximado(nome, dataNasc) {
-    return !!this.encontrarDuplicadoAproximado(nome, dataNasc);
+  isDuplicadoAproximado(nome, dataNasc, whatsapp = '') {
+    return !!this.encontrarDuplicadoAproximado(nome, dataNasc, whatsapp);
   },
 
   // Ponto 6: Campos calculados
