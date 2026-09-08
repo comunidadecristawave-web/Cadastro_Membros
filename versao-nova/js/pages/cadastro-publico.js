@@ -282,7 +282,8 @@ WavePages['cadastro-publico'] = {
 
     const nomeNormalizado = WaveData.normalizarNomeAproximado(nomeAtual);
     const lideres = WaveData.getLideresPorSexo(sexo)
-      .filter(l => !nomeNormalizado || WaveData.normalizarNomeAproximado(l.nome) !== nomeNormalizado);
+      .filter(l => !nomeNormalizado || WaveData.normalizarNomeAproximado(l.nome) !== nomeNormalizado)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
     if (lideres.length === 0) {
       select.innerHTML = `<option value="" selected disabled>Nenhum líder ativo encontrado para este sexo</option>`;
