@@ -233,13 +233,23 @@ window.WaveData = {
       lider: liderParsed,
       liderId: liderId,
       eLider: p.e_lider ?? false,
-      celulas: celulasParsed
+      celulas: celulasParsed,
+      referenciaExterna: p.referencia_externa === true
     };
   },
 
+  // Pessoas mantidas na base só para preservar um vínculo de discipulado
+  // (ex: Cesinha Sitta / Suellen Sitta, pastores da rede) mas que não são
+  // desta igreja: ficam de fora de toda lista, contagem e dropdown, mas
+  // continuam resolvíveis por getMembroById/getMembroByNome — quem já tem
+  // o vínculo salvo (ex: Rafael Miamoto) precisa continuar exibindo o nome.
+  getMembrosVisiveis() {
+    return this.membros.filter(m => !m.referenciaExterna);
+  },
+
   recalcularEstatisticas() {
-    this.todosMembrosIgreja = [...this.membros];
-    const membrosAtivos = this.membros.filter(m => m.status === 'ATIVO');
+    this.todosMembrosIgreja = this.getMembrosVisiveis();
+    const membrosAtivos = this.todosMembrosIgreja.filter(m => m.status === 'ATIVO');
     this.todosLideres = membrosAtivos.filter(m => m.eLider === true && m.celulas && m.celulas.length > 0);
 
     // Contagem de células ativas
@@ -269,7 +279,7 @@ window.WaveData = {
   },
 
   getAllMembrosIgreja() {
-    return this.membros;
+    return this.getMembrosVisiveis();
   },
 
   getMembroByNome(nome) {
@@ -279,7 +289,7 @@ window.WaveData = {
   },
 
   getAllLideresAtivos() {
-    return this.membros.filter(m => m.eLider === true && m.status === 'ATIVO');
+    return this.getMembrosVisiveis().filter(m => m.eLider === true && m.status === 'ATIVO');
   },
 
   getLideresPorSexo(sexo) {
@@ -486,7 +496,7 @@ window.WaveData = {
 
   // Ponto 11: Aniversariantes do Mês Corrente
   getAniversariantesDoMes(mesAlvo = new Date().getMonth()) {
-    return this.membros.filter(m => {
+    return this.getMembrosVisiveis().filter(m => {
       if (!m.dataNascimento || m.status !== 'ATIVO') return false;
       const nasc = this.parseDataLocal(m.dataNascimento);
       return nasc.getMonth() === mesAlvo;

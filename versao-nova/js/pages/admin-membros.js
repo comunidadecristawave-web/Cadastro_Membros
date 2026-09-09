@@ -715,9 +715,13 @@ WavePages['admin-membros'] = {
         const idade = WaveData.calcIdade(m.dataNascimento);
         const tempoMembro = WaveData.calcTempoMembro(m.dataIngresso);
         const infoLider = WaveData.calcInfoLideranca(m);
-        const liderResolvido = (m.lider && m.lider !== '—')
+        const liderResolvidoBruto = (m.lider && m.lider !== '—')
           ? ((m.liderId && WaveData.getMembroById(m.liderId)) || WaveData.getMembroByNome(m.lider))
           : null;
+        // Referência externa (ex: Cesinha Sitta, Suellen Sitta): mantém o nome
+        // exibido pra preservar o vínculo, mas sem navegação pra ficha dela,
+        // já que ela não aparece em nenhuma lista/dropdown do sistema.
+        const liderResolvido = (liderResolvidoBruto && !liderResolvidoBruto.referenciaExterna) ? liderResolvidoBruto : null;
         const tipoIngressoBadge = m.tipoIngresso === 'Batismo' ? 'badge-success' : 'badge-white';
 
         return `
