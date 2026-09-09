@@ -129,8 +129,10 @@ window.WaveApp = {
     if (this._realtimeChannel || !window.supabaseClient) return;
 
     const aplicarMudanca = (payload) => {
-      // Evita atropelar um formulário que o admin esteja preenchendo no momento
-      const formularioAberto = document.querySelector('.modal-overlay.open form');
+      // Evita atropelar formulários abertos (tanto modal do admin quanto cadastro público)
+      const formularioAberto = document.querySelector('.modal-overlay.open form') || 
+                               document.querySelector('#cadastro-publico-form') || 
+                               this._currentPage === 'cadastro-publico';
 
       if (payload.eventType === 'DELETE') {
         WaveData.membros = WaveData.membros.filter(m => m.id !== payload.old.id);
@@ -150,6 +152,9 @@ window.WaveApp = {
       WaveData.recalcularEstatisticas();
       if (!formularioAberto) {
         this.renderCurrentPage();
+      } else if (this._currentPage === 'cadastro-publico' && window.WavePages && window.WavePages['cadastro-publico']) {
+        // Atualiza apenas a lista de líderes sem resetar os campos do formulário
+        window.WavePages['cadastro-publico'].atualizarListaLideres();
       }
     };
 
