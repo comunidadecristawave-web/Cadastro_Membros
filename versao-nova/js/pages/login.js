@@ -124,6 +124,7 @@ WavePages.login = {
 
       if (result.ok) {
         this._errorMessage = '';
+        WaveApp.iniciarRealtimeMembros();
         WaveApp.navigate('boas-vindas');
         WaveApp.renderCurrentPage();
       } else {

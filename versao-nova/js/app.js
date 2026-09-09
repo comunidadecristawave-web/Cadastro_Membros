@@ -65,6 +65,10 @@ window.WaveApp = {
     this.renderCurrentPage();
     this.updateNav();
 
+    if (WaveAuth.isAuthenticated()) {
+      this.iniciarRealtimeMembros();
+    }
+
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.slice(1);
       const parts = hash.split('/');
@@ -113,6 +117,53 @@ window.WaveApp = {
     } else {
       this.navigate('admin');
     }
+  },
+
+  // Atualiza a lista de membros em tempo real (via Supabase Realtime) sempre que
+  // alguém preenche o cadastro público ou algo muda na tabela `pessoas` — sem
+  // precisar dar F5. Requer Realtime habilitado pra tabela `pessoas` no Supabase
+  // (Database > Replication no painel) — se não estiver habilitado, o canal
+  // conecta normalmente mas nenhum evento chega, e o app segue funcionando como
+  // antes (só sem o "instantâneo").
+  iniciarRealtimeMembros() {
+    if (this._realtimeChannel || !window.supabaseClient) return;
+
+    const aplicarMudanca = (payload) => {
+      // Evita atropelar um formulário que o admin esteja preenchendo no momento
+      const formularioAberto = document.querySelector('.modal-overlay.open form');
+
+      if (payload.eventType === 'DELETE') {
+        WaveData.membros = WaveData.membros.filter(m => m.id !== payload.old.id);
+      } else {
+        const membro = WaveData._parsePessoaFromDB(payload.new);
+        const idx = WaveData.membros.findIndex(m => m.id === membro.id);
+        if (idx !== -1) {
+          WaveData.membros[idx] = membro;
+        } else {
+          WaveData.membros.push(membro);
+          if (!formularioAberto) {
+            this.showToast(`🆕 Novo cadastro: ${membro.nome}`, 'success');
+          }
+        }
+      }
+
+      WaveData.recalcularEstatisticas();
+      if (!formularioAberto) {
+        this.renderCurrentPage();
+      }
+    };
+
+    this._realtimeChannel = window.supabaseClient
+      .channel('pessoas-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pessoas' }, aplicarMudanca)
+      .subscribe();
+  },
+
+  pararRealtimeMembros() {
+    if (this._realtimeChannel && window.supabaseClient) {
+      window.supabaseClient.removeChannel(this._realtimeChannel);
+    }
+    this._realtimeChannel = null;
   },
 
   renderCurrentPage() {

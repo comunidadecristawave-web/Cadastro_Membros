@@ -195,6 +195,9 @@ window.WaveAuth = {
   },
 
   logout() {
+    if (window.WaveApp && WaveApp.pararRealtimeMembros) {
+      WaveApp.pararRealtimeMembros();
+    }
     this._sessionUser = null;
     sessionStorage.removeItem('wave_auth_session');
     localStorage.removeItem('wave_auth_session');
