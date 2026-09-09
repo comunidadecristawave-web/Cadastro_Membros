@@ -89,11 +89,11 @@ WavePages['cadastro-publico'] = {
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
                 <div class="input-group">
                   <label class="input-label">WhatsApp *</label>
-                  <input class="input-field" type="text" name="whatsapp" placeholder="(44) 99999-9999" oninput="WavePages['cadastro-publico'].maskPhone(this)" required>
+                  <input class="input-field" type="text" name="whatsapp" placeholder="(44) 99999-9999" oninput="WavePages['cadastro-publico'].maskPhone(this); WavePages['cadastro-publico'].atualizarListaLideres();" required>
                 </div>
                 <div class="input-group">
                   <label class="input-label">Data Nasc. *</label>
-                  <input class="input-field" type="date" name="dataNascimento" min="1900-01-01" max="2099-12-31" oninput="WavePages['cadastro-publico'].validarMaxAnoData(this)" required>
+                  <input class="input-field" type="date" name="dataNascimento" min="1900-01-01" max="2099-12-31" oninput="WavePages['cadastro-publico'].validarMaxAnoData(this); WavePages['cadastro-publico'].atualizarListaLideres();" required>
                 </div>
               </div>
 
@@ -285,16 +285,33 @@ WavePages['cadastro-publico'] = {
       .filter(l => !nomeNormalizado || WaveData.normalizarNomeAproximado(l.nome) !== nomeNormalizado)
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
-    if (lideres.length === 0) {
+    // Caso especial Rafael/Flávia: se quem está preenchendo já é um cadastro existente cujo
+    // líder responsável salvo é uma referência externa (ex: Cesinha/Suellen Sitta), ele não
+    // aparece na lista acima (fica oculto em todo o resto do sistema) — mas precisa continuar
+    // selecionável só pra essa pessoa, senão ela perderia o vínculo real ao reenviar o formulário.
+    const whatsappInput = document.querySelector('#cadastro-publico-form [name="whatsapp"]');
+    const dataNascInput = document.querySelector('#cadastro-publico-form [name="dataNascimento"]');
+    const dataNasc = dataNascInput ? dataNascInput.value : '';
+    const whatsapp = whatsappInput ? whatsappInput.value : '';
+    const duplicado = dataNasc ? WaveData.encontrarDuplicadoAproximado(nomeAtual, dataNasc, whatsapp) : null;
+    const liderAtualDuplicado = duplicado
+      ? (WaveData.getMembroById(duplicado.liderId) || WaveData.getMembroByNome(duplicado.lider))
+      : null;
+    const liderExterno = (liderAtualDuplicado && liderAtualDuplicado.referenciaExterna) ? liderAtualDuplicado : null;
+
+    if (lideres.length === 0 && !liderExterno) {
       select.innerHTML = `<option value="" selected disabled>Nenhum líder ativo encontrado para este sexo</option>`;
       return;
     }
 
-    let html = `<option value="" disabled selected>Selecione o Líder Responsável</option>`;
+    let html = `<option value="" disabled${liderExterno ? '' : ' selected'}>Selecione o Líder Responsável</option>`;
+    if (liderExterno) {
+      html += `<option value="${liderExterno.nome}" selected>${liderExterno.nome}</option>`;
+    }
     lideres.forEach(l => { html += `<option value="${l.nome}">${l.nome}</option>`; });
     select.innerHTML = html;
 
-    if (valorAnterior && lideres.some(l => l.nome === valorAnterior)) {
+    if (!liderExterno && valorAnterior && lideres.some(l => l.nome === valorAnterior)) {
       select.value = valorAnterior;
     }
   },
@@ -489,23 +506,34 @@ WavePages['cadastro-publico'] = {
         return;
       }
 
-      const validacaoSexo = WaveData.validarMesmoSexo(sexo, lider);
-      if (!validacaoSexo.ok) {
-        mostrarErro(validacaoSexo.message);
-        return;
-      }
-
-      if (eLider) {
-        const validacaoLideranca = WaveData.validarLideradoVirarLider(lider);
-        if (!validacaoLideranca.ok) {
-          mostrarErro(`Para você virar líder, ${lider} precisa ter uma célula de Liderança cadastrada primeiro. Fale com ${lider} ou com a secretaria antes de reenviar este formulário.`);
-          return;
-        }
-      }
-
       // Duplicata (nome aproximado OU mesmo WhatsApp, + data de nascimento exata): atualiza
       // o cadastro existente em vez de criar um novo, sobrescrevendo com os dados do formulário.
       const duplicado = WaveData.encontrarDuplicadoAproximado(nome, dataNascimento, whatsapp);
+
+      // Caso especial Rafael/Flávia: o líder responsável real deles (Cesinha/Suellen) é uma
+      // referência externa e não aparece mais no dropdown, então o que estiver selecionado ali
+      // não é uma escolha válida — mantém o vínculo já salvo e ignora a seleção do formulário
+      // pra esse campo, sem bloquear o reenvio do resto dos dados.
+      const liderAtualDoDuplicado = duplicado
+        ? (WaveData.getMembroById(duplicado.liderId) || WaveData.getMembroByNome(duplicado.lider))
+        : null;
+      const preservarVinculoExterno = !!(liderAtualDoDuplicado && liderAtualDoDuplicado.referenciaExterna);
+
+      if (!preservarVinculoExterno) {
+        const validacaoSexo = WaveData.validarMesmoSexo(sexo, lider);
+        if (!validacaoSexo.ok) {
+          mostrarErro(validacaoSexo.message);
+          return;
+        }
+
+        if (eLider) {
+          const validacaoLideranca = WaveData.validarLideradoVirarLider(lider);
+          if (!validacaoLideranca.ok) {
+            mostrarErro(`Para você virar líder, ${lider} precisa ter uma célula de Liderança cadastrada primeiro. Fale com ${lider} ou com a secretaria antes de reenviar este formulário.`);
+            return;
+          }
+        }
+      }
 
       const payload = {
         nome,
@@ -518,7 +546,7 @@ WavePages['cadastro-publico'] = {
         bairro,
         cidade,
         complemento,
-        lider,
+        ...(preservarVinculoExterno ? {} : { lider }),
         eLider,
         celulas: eLider ? [{
           id: 'cel-' + Date.now(),
