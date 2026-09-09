@@ -102,15 +102,21 @@ WavePages.admin = {
       </div>
 
       <!-- Modal: Aniversariantes do Mês com WhatsApp e Modelos de Mensagem -->
+      <style>
+        @media (max-width: 480px) {
+          .aniversariante-item { flex-wrap: wrap; }
+          .aniversariante-item .aniversariante-acao { flex: 1 1 100%; justify-content: center; }
+        }
+      </style>
       <div class="modal-overlay ${this._showAniversariantesModal ? 'open' : ''}" onclick="WavePages.admin.fecharAniversariantesOutside(event)">
         <div class="modal-sheet" style="max-width:620px;">
           <div class="sheet-handle"></div>
-          <div class="sheet-header">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <h3 class="sheet-title">🎉 Aniversariantes deste Mês</h3>
-              <span class="badge badge-success" style="font-size:0.75rem;">${aniversariantesMes.length} pessoa(s)</span>
+          <div class="sheet-header" style="align-items:flex-start;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px;min-width:0;flex:1;">
+              <h3 class="sheet-title" style="font-size:1.05rem;">🎉 Aniversariantes deste Mês</h3>
+              <span class="badge badge-success" style="font-size:0.75rem;white-space:nowrap;flex-shrink:0;">${aniversariantesMes.length} pessoa(s)</span>
             </div>
-            <button class="sheet-close" onclick="WavePages.admin.fecharAniversariantesModal()">
+            <button class="sheet-close" onclick="WavePages.admin.fecharAniversariantesModal()" style="flex-shrink:0;margin-left:8px;">
               <i data-lucide="x" style="width:18px;height:18px;"></i>
             </button>
           </div>
@@ -157,13 +163,13 @@ WavePages.admin = {
                   <textarea id="novo-modelo-template" placeholder="Escreva a mensagem aqui... Use as tags dinâmicas: {nome}, {idade}, {tratamento}, {complementoIdade}" class="input-field" style="min-height:85px;font-size:0.82rem;line-height:1.4;resize:vertical;"></textarea>
                   
                   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                      <button type="button" class="btn btn-ghost" onclick="WavePages.admin.inserirTag('{nome}')" style="font-size:0.7rem;padding:2px 6px;background:rgba(255,255,255,0.06);">+ {nome}</button>
-                      <button type="button" class="btn btn-ghost" onclick="WavePages.admin.inserirTag('{idade}')" style="font-size:0.7rem;padding:2px 6px;background:rgba(255,255,255,0.06);">+ {idade}</button>
-                      <button type="button" class="btn btn-ghost" onclick="WavePages.admin.inserirTag('{tratamento}')" style="font-size:0.7rem;padding:2px 6px;background:rgba(255,255,255,0.06);">+ {tratamento}</button>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-ghost" onclick="WavePages.admin.inserirTag('{nome}')" style="font-size:0.75rem;padding:6px 12px;min-height:32px;background:rgba(255,255,255,0.06);">+ {nome}</button>
+                      <button type="button" class="btn btn-ghost" onclick="WavePages.admin.inserirTag('{idade}')" style="font-size:0.75rem;padding:6px 12px;min-height:32px;background:rgba(255,255,255,0.06);">+ {idade}</button>
+                      <button type="button" class="btn btn-ghost" onclick="WavePages.admin.inserirTag('{tratamento}')" style="font-size:0.75rem;padding:6px 12px;min-height:32px;background:rgba(255,255,255,0.06);">+ {tratamento}</button>
                     </div>
 
-                    <button type="button" class="btn btn-primary" onclick="WavePages.admin.salvarNovoModeloSubmit()" style="padding:6px 14px;font-size:0.78rem;">
+                    <button type="button" class="btn btn-primary" onclick="WavePages.admin.salvarNovoModeloSubmit()" style="padding:8px 16px;font-size:0.8rem;min-height:36px;width:100%;">
                       Salvar Modelo
                     </button>
                   </div>
@@ -174,8 +180,8 @@ WavePages.admin = {
               <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:10px 12px;border:1px solid var(--border-subtle);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                   <span style="font-size:0.7rem;color:var(--text-tertiary);text-transform:uppercase;font-weight:700;">Pré-visualização da Mensagem:</span>
-                  <button type="button" class="btn btn-ghost" onclick="WavePages.admin.copiarTexto('${encodeURIComponent(textoPreview)}')" style="font-size:0.7rem;padding:2px 6px;color:var(--text-secondary);" title="Copiar pré-visualização">
-                    <i data-lucide="copy" style="width:12px;height:12px;"></i> Copiar
+                  <button type="button" class="btn btn-ghost" onclick="WavePages.admin.copiarTexto('${encodeURIComponent(textoPreview)}')" style="font-size:0.75rem;padding:6px 10px;min-height:32px;color:var(--text-secondary);flex-shrink:0;" title="Copiar pré-visualização">
+                    <i data-lucide="copy" style="width:13px;height:13px;"></i> Copiar
                   </button>
                 </div>
                 <p style="font-size:0.8rem;color:var(--text-primary);line-height:1.45;margin:0;font-style:italic;">
@@ -202,23 +208,23 @@ WavePages.admin = {
       const msgEncoded = encodeURIComponent(msgCustom);
 
       return `
-                    <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--border-subtle);gap:12px;">
+                    <div class="card aniversariante-item" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--border-subtle);gap:12px;">
                       <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
                         <div style="width:36px;height:36px;border-radius:var(--radius-full);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;color:var(--white);overflow:hidden;">
                           ${WaveData.avatarConteudo(m)}
                         </div>
                         <div style="min-width:0;flex:1;">
-                          <strong style="font-size:0.88rem;color:var(--white);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.nome}</strong>
+                          <strong style="font-size:0.88rem;color:var(--white);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${m.nome}">${m.nome}</strong>
                           <span style="font-size:0.72rem;color:var(--warning);font-weight:600;">📅 ${diaNasc}/${mesNasc} (${idade} anos)</span>
                         </div>
                       </div>
 
                       ${m.whatsapp ? `
-                        <a href="https://wa.me/${m.whatsapp.replace(/\D/g, '')}?text=${msgEncoded}" target="_blank" class="btn btn-whatsapp" style="padding:7px 14px;font-size:0.78rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;font-weight:600;">
+                        <a href="https://wa.me/${m.whatsapp.replace(/\D/g, '')}?text=${msgEncoded}" target="_blank" class="btn btn-whatsapp aniversariante-acao" style="padding:7px 14px;font-size:0.78rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;font-weight:600;">
                           <i data-lucide="message-circle" style="width:15px;height:15px;"></i> Enviar Parabéns
                         </a>
                       ` : `
-                        <span style="font-size:0.7rem;color:var(--text-tertiary);">Sem WhatsApp</span>
+                        <span class="aniversariante-acao" style="font-size:0.7rem;color:var(--text-tertiary);text-align:center;">Sem WhatsApp</span>
                       `}
                     </div>
                   `;
