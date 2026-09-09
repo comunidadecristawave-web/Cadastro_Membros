@@ -27,7 +27,7 @@ window.WaveComponents = {
 
   birthdayCard(membro) {
     const hoje = new Date();
-    const nasc = new Date(membro.dataNascimento);
+    const nasc = WaveData.parseDataLocal(membro.dataNascimento);
     const diaNasc = nasc.getDate();
     const diaHoje = hoje.getDate();
 

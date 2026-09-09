@@ -194,7 +194,7 @@ WavePages.admin = {
             ` : `
               <div style="display:flex;flex-direction:column;gap:8px;">
                 ${aniversariantesMes.map(m => {
-      const nasc = new Date(m.dataNascimento);
+      const nasc = WaveData.parseDataLocal(m.dataNascimento);
       const diaNasc = String(nasc.getDate()).padStart(2, '0');
       const mesNasc = String(nasc.getMonth() + 1).padStart(2, '0');
       const idade = WaveData.calcIdade(m.dataNascimento);

@@ -18,6 +18,16 @@ window.WaveData = {
   membros: [],
   celulas: [],
 
+  // Datas vindas do banco (YYYY-MM-DD, sem hora) são interpretadas pelo
+  // JavaScript como meia-noite em UTC — em fuso negativo (Brasil, UTC-3)
+  // isso "volta" um dia na exibição (ex: nascimento 2020-09-10 aparece
+  // como 09/09). Forçar meia-noite LOCAL evita esse deslocamento.
+  parseDataLocal(dataStr) {
+    if (!dataStr) return new Date(NaN);
+    const str = String(dataStr);
+    return new Date(str.length > 10 ? str : str + 'T00:00:00');
+  },
+
   // Conteúdo interno de um círculo de avatar: foto do membro (ex: selfie do
   // formulário público) se existir, senão a inicial do nome. Reutilizado em
   // todo lugar que hoje renderiza `${membro.nome.charAt(0)}` — o container
@@ -429,7 +439,7 @@ window.WaveData = {
   calcIdade(dataNascimento) {
     if (!dataNascimento) return 0;
     const hoje = new Date();
-    const nasc = new Date(dataNascimento);
+    const nasc = this.parseDataLocal(dataNascimento);
     let idade = hoje.getFullYear() - nasc.getFullYear();
     const m = hoje.getMonth() - nasc.getMonth();
     if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
@@ -439,7 +449,7 @@ window.WaveData = {
   calcTempoMembro(dataIngresso) {
     if (!dataIngresso) return 'Recente';
     const hoje = new Date();
-    const ingresso = new Date(dataIngresso);
+    const ingresso = this.parseDataLocal(dataIngresso);
     let anos = hoje.getFullYear() - ingresso.getFullYear();
     let meses = hoje.getMonth() - ingresso.getMonth();
 
@@ -478,11 +488,11 @@ window.WaveData = {
   getAniversariantesDoMes(mesAlvo = new Date().getMonth()) {
     return this.membros.filter(m => {
       if (!m.dataNascimento || m.status !== 'ATIVO') return false;
-      const nasc = new Date(m.dataNascimento);
+      const nasc = this.parseDataLocal(m.dataNascimento);
       return nasc.getMonth() === mesAlvo;
     }).sort((a, b) => {
-      const dA = new Date(a.dataNascimento).getDate();
-      const dB = new Date(b.dataNascimento).getDate();
+      const dA = this.parseDataLocal(a.dataNascimento).getDate();
+      const dB = this.parseDataLocal(b.dataNascimento).getDate();
       return dA - dB;
     });
   },
