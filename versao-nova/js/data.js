@@ -670,7 +670,7 @@ window.WaveData = {
       const res = await WaveSupabase.updatePessoa(membroId, {
         status: 'INATIVO',
         e_lider: false,
-        celulas_json: []
+        celulas_json: '[]'
       });
 
       if (!res) {
@@ -728,7 +728,7 @@ window.WaveData = {
 
     if (window.WaveSupabase && window.supabaseClient) {
       const res = await WaveSupabase.updatePessoa(liderId, {
-        celulas_json: novasCelulas
+        celulas_json: JSON.stringify(novasCelulas)
       });
       if (!res) {
         return { ok: false, message: 'Falha ao salvar o fechamento da célula no banco de dados.' };
@@ -760,7 +760,7 @@ window.WaveData = {
       lider: novoLiderResponsavel || '—',
       discipulador_id: discipuladorId,
       e_lider: reativarComoLider,
-      celulas_json: reativarComoLider ? novasCelulas : []
+      celulas_json: JSON.stringify(reativarComoLider ? novasCelulas : [])
     };
 
     if (window.WaveSupabase && window.supabaseClient) {
@@ -806,7 +806,10 @@ window.WaveData = {
       e_lider: membro.eLider ?? false,
       lider: membro.lider || '—',
       discipulador_id: discipuladorId,
-      celulas_json: membro.celulas || [],
+      // celulas_json é uma coluna text no banco (guarda um JSON serializado, não jsonb) —
+      // mandar o array puro faz o PostgREST rejeitar o update com "operator does not
+      // exist: text = uuid". Precisa ir sempre como string.
+      celulas_json: JSON.stringify(membro.celulas || []),
       foto_url: membro.foto || null,
       consentimento_aceito: membro.consentimentoAceito || false,
       consentimento_aceito_em: membro.consentimentoAceitoEm || null
@@ -860,7 +863,10 @@ window.WaveData = {
       e_lider: dadosAtualizados.eLider !== undefined ? dadosAtualizados.eLider : (this.membros[idx].eLider ?? false),
       lider: novoLiderNome,
       discipulador_id: discipuladorId,
-      celulas_json: dadosAtualizados.celulas !== undefined ? dadosAtualizados.celulas : (this.membros[idx].celulas || []),
+      // celulas_json é uma coluna text no banco (guarda um JSON serializado, não jsonb) —
+      // mandar o array puro faz o PostgREST rejeitar o update com "operator does not
+      // exist: text = uuid". Precisa ir sempre como string.
+      celulas_json: JSON.stringify(dadosAtualizados.celulas !== undefined ? dadosAtualizados.celulas : (this.membros[idx].celulas || [])),
       foto_url: dadosAtualizados.foto !== undefined ? dadosAtualizados.foto : (this.membros[idx].foto || null),
       consentimento_aceito: dadosAtualizados.consentimentoAceito !== undefined ? dadosAtualizados.consentimentoAceito : (this.membros[idx].consentimentoAceito || false),
       consentimento_aceito_em: dadosAtualizados.consentimentoAceitoEm !== undefined ? dadosAtualizados.consentimentoAceitoEm : (this.membros[idx].consentimentoAceitoEm || null)
