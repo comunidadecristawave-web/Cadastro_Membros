@@ -140,7 +140,11 @@ window.WaveApp = {
         const membro = WaveData._parsePessoaFromDB(payload.new);
         const idx = WaveData.membros.findIndex(m => m.id === membro.id);
         if (idx !== -1) {
-          WaveData.membros[idx] = membro;
+          // Muta o objeto existente em vez de trocar a referência do array: se uma
+          // ficha ou formulário de edição já estava aberto segurando esse objeto
+          // (ex: this._membroDetalhes), ele continua enxergando os dados atualizados
+          // em vez de sobrescrever o banco com dados antigos ao salvar depois.
+          Object.assign(WaveData.membros[idx], membro);
         } else {
           WaveData.membros.push(membro);
           if (!formularioAberto) {
