@@ -67,6 +67,7 @@ window.WaveApp = {
 
     if (WaveAuth.isAuthenticated()) {
       this.iniciarRealtimeMembros();
+      this.iniciarAutoSync();
     }
 
     window.addEventListener('hashchange', () => {
@@ -125,6 +126,36 @@ window.WaveApp = {
   // (Database > Replication no painel) — se não estiver habilitado, o canal
   // conecta normalmente mas nenhum evento chega, e o app segue funcionando como
   // antes (só sem o "instantâneo").
+  // Rede de segurança contra dados/fotos desatualizados na tela: o Realtime cobre
+  // a maioria dos casos, mas uma aba que ficou em segundo plano por um tempo pode
+  // perder a conexão do websocket sem avisar. Isso resincroniza sozinho sempre que
+  // a aba volta a ficar visível, e periodicamente como reforço — sem interromper
+  // quem estiver com um formulário/modal aberto no meio de uma edição.
+  _formularioAberto() {
+    return !!(
+      document.querySelector('.modal-overlay.open form') ||
+      document.querySelector('#cadastro-publico-form') ||
+      this._currentPage === 'cadastro-publico'
+    );
+  },
+
+  iniciarAutoSync() {
+    if (this._autoSyncAtivo) return;
+    this._autoSyncAtivo = true;
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && WaveAuth.isAuthenticated() && !this._formularioAberto()) {
+        WaveData.syncSupabase();
+      }
+    });
+
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && WaveAuth.isAuthenticated() && !this._formularioAberto()) {
+        WaveData.syncSupabase();
+      }
+    }, 5 * 60 * 1000);
+  },
+
   iniciarRealtimeMembros() {
     if (this._realtimeChannel || !window.supabaseClient) return;
 
