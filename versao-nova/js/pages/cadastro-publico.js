@@ -63,12 +63,17 @@ WavePages['cadastro-publico'] = {
           max-width: 100%;
           width: 100%;
           box-sizing: border-box;
-          /* Propriedade específica do WebKit/iOS: assim que o campo tem uma data
-             preenchida, o Safari re-renderiza como uma "pílula" com largura própria
-             baseada no texto formatado ("18 de set. de 2026"), ignorando width:100%
-             e min-width normais. -webkit-min-logical-width é a única forma de zerar
-             esse mínimo interno específico do iOS. */
           -webkit-min-logical-width: 0%;
+          /* O Safari do iOS ignora width/min-width normais em input[type=date] —
+             tanto vazio quanto preenchido — porque desenha o campo com a aparência
+             nativa do sistema, que carrega seu próprio tamanho mínimo interno.
+             -webkit-appearance:none remove essa aparência nativa e faz o campo se
+             comportar como uma caixa comum, respeitando o CSS normalmente. O
+             seletor de data (abrir o relógio/calendário ao tocar) continua
+             funcionando — só a moldura visual nativa é que some, e nosso próprio
+             estilo (.input-field) já cobre isso. */
+          -webkit-appearance: none;
+          appearance: none;
         }
         @media (max-width: 480px) {
           .cadastro-publico-page.login-container {
