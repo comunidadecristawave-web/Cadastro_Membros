@@ -5,6 +5,13 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 
+/* Esconde o badge/HUD que o próprio Netlify injeta no HTML servido (fora do nosso
+   controle — não existe no index.html, é adicionado pela infraestrutura deles).
+   Puramente visual: não desativa nem interfere no funcionamento do site. */
+.nl-wrap {
+  display: none !important;
+}
+
 :root {
   /* ── Core Colors ── */
   --black: #000000;
