@@ -61,6 +61,14 @@ WavePages['cadastro-publico'] = {
         .cadastro-publico-page input[type="date"] {
           min-width: 0;
           max-width: 100%;
+          width: 100%;
+          box-sizing: border-box;
+          /* Propriedade específica do WebKit/iOS: assim que o campo tem uma data
+             preenchida, o Safari re-renderiza como uma "pílula" com largura própria
+             baseada no texto formatado ("18 de set. de 2026"), ignorando width:100%
+             e min-width normais. -webkit-min-logical-width é a única forma de zerar
+             esse mínimo interno específico do iOS. */
+          -webkit-min-logical-width: 0%;
         }
         @media (max-width: 480px) {
           .cadastro-publico-page.login-container {
