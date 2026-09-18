@@ -122,13 +122,25 @@ window.WaveData = {
     return this.getFaixasArray(val);
   },
 
+  // Assinatura da última leitura crua do banco — permite pular o re-render por
+  // completo quando uma sincronização automática não encontra nenhuma mudança
+  // real (o caso mais comum), em vez de reconstruir a tela inteira à toa.
+  _ultimaAssinaturaSync: null,
+
   async syncSupabase() {
+    let houveMudanca = true;
     try {
       if (window.WaveSupabase) {
         const pessoasDB = await WaveSupabase.fetchPessoas();
         if (pessoasDB && pessoasDB.length > 0) {
-          this.membros = pessoasDB.map(p => this._parsePessoaFromDB(p));
-          this.recalcularEstatisticas();
+          const assinatura = JSON.stringify(pessoasDB);
+          houveMudanca = assinatura !== this._ultimaAssinaturaSync;
+          this._ultimaAssinaturaSync = assinatura;
+
+          if (houveMudanca) {
+            this.membros = pessoasDB.map(p => this._parsePessoaFromDB(p));
+            this.recalcularEstatisticas();
+          }
 
           // Migração pontual de dados legados no Supabase (ex: 'RIPE', 'Movement', etc.) e autorreferência
           for (const p of pessoasDB) {
@@ -163,8 +175,8 @@ window.WaveData = {
       console.warn('Falha na sincronização Supabase:', err);
     }
 
-    if (window.WaveApp && window.WaveApp.renderCurrentPage) {
-      WaveApp.renderCurrentPage();
+    if (houveMudanca && window.WaveApp && window.WaveApp.renderCurrentPage) {
+      WaveApp.renderCurrentPage(true);
     }
   },
 

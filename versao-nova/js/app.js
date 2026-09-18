@@ -213,7 +213,7 @@ window.WaveApp = {
 
       WaveData.recalcularEstatisticas();
       if (!formularioAberto) {
-        this.renderCurrentPage();
+        this.renderCurrentPage(true);
       } else if (this._currentPage === 'cadastro-publico' && window.WavePages && window.WavePages['cadastro-publico']) {
         // Atualiza apenas a lista de líderes sem resetar os campos do formulário
         window.WavePages['cadastro-publico'].atualizarListaLideres();
@@ -233,9 +233,26 @@ window.WaveApp = {
     this._realtimeChannel = null;
   },
 
-  renderCurrentPage() {
+  // preservarPosicao=true é pra re-renders disparados por dados chegando por trás
+  // (sync automático, Realtime) — mantém rolagem e o campo focado como estavam,
+  // em vez do salto pro topo que faz sentido só numa navegação de verdade.
+  renderCurrentPage(preservarPosicao = false) {
     const container = document.getElementById('page-content');
     if (!container) return;
+
+    let scrollContainerSalvo = 0, scrollJanelaSalvo = 0, seletorFoco = null, selStart = null, selEnd = null;
+    if (preservarPosicao) {
+      scrollContainerSalvo = container.scrollTop;
+      scrollJanelaSalvo = window.scrollY;
+      const ativo = document.activeElement;
+      if (ativo && ativo.id && container.contains(ativo)) {
+        seletorFoco = '#' + CSS.escape(ativo.id);
+        if (typeof ativo.selectionStart === 'number') {
+          selStart = ativo.selectionStart;
+          selEnd = ativo.selectionEnd;
+        }
+      }
+    }
 
     let html = '';
     const page = WavePages[this._currentPage];
@@ -259,8 +276,22 @@ window.WaveApp = {
       lucide.createIcons();
     }
 
-    container.scrollTop = 0;
-    window.scrollTo(0, 0);
+    if (preservarPosicao) {
+      container.scrollTop = scrollContainerSalvo;
+      window.scrollTo(0, scrollJanelaSalvo);
+      if (seletorFoco) {
+        const elFoco = container.querySelector(seletorFoco);
+        if (elFoco) {
+          elFoco.focus({ preventScroll: true });
+          if (selStart !== null && typeof elFoco.setSelectionRange === 'function') {
+            try { elFoco.setSelectionRange(selStart, selEnd); } catch (e) {}
+          }
+        }
+      }
+    } else {
+      container.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
 
     if (page && page.onMount) {
       page.onMount();
