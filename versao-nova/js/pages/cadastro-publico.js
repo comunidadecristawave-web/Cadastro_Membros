@@ -51,6 +51,17 @@ WavePages['cadastro-publico'] = {
         .cadastro-publico-page textarea {
           font-size: 16px !important;
         }
+        /* input[type=date] tem uma largura mínima nativa (o widget de dia/mês/ano do
+           Android e do iOS) que o CSS Grid não respeita por padrão — o item do grid
+           fica com min-width:auto e ignora o width:100%, empurrando o campo pra fora
+           do card. min-width:0 libera o encolhimento pro tamanho real da coluna. */
+        .cadastro-publico-page .input-group {
+          min-width: 0;
+        }
+        .cadastro-publico-page input[type="date"] {
+          min-width: 0;
+          max-width: 100%;
+        }
         @media (max-width: 480px) {
           .cadastro-publico-page.login-container {
             max-width: 100% !important;
