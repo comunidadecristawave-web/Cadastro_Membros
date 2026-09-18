@@ -234,7 +234,12 @@ window.WaveData = {
       liderId: liderId,
       eLider: p.e_lider ?? false,
       celulas: celulasParsed,
-      referenciaExterna: p.referencia_externa === true
+      referenciaExterna: p.referencia_externa === true,
+      // Sem isso, updateMembro (que preserva o consentimento existente quando o
+      // payload de uma edição não o menciona) sempre caía no fallback "false"/null
+      // e apagava o registro de consentimento LGPD a cada edição feita pelo admin.
+      consentimentoAceito: p.consentimento_aceito === true,
+      consentimentoAceitoEm: p.consentimento_aceito_em || null
     };
   },
 

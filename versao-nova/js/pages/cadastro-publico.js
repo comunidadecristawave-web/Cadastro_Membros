@@ -559,6 +559,15 @@ WavePages['cadastro-publico'] = {
         }
       }
 
+      // O formulário público só sabe lidar com UMA célula Evangelística (a do próprio
+      // discípulo). Se a pessoa já tiver outras células (ex: uma célula de Liderança,
+      // porque ela disciplina outros líderes), elas precisam ser preservadas aqui —
+      // senão o reenvio do formulário público substitui o array inteiro e apaga esse
+      // vínculo, mesmo sem a pessoa saber que isso existia.
+      const celulasPreservadas = duplicado
+        ? (duplicado.celulas || []).filter(c => c.finalidade !== 'Evangelística')
+        : [];
+
       const payload = {
         nome,
         whatsapp,
@@ -572,7 +581,7 @@ WavePages['cadastro-publico'] = {
         complemento,
         ...(preservarVinculoExterno ? {} : { lider }),
         eLider,
-        celulas: eLider ? [{
+        celulas: eLider ? [...celulasPreservadas, {
           id: 'cel-' + Date.now(),
           finalidade: 'Evangelística',
           faixaEtaria: this._celula.faixaEtaria,
@@ -584,7 +593,7 @@ WavePages['cadastro-publico'] = {
           bairro: this._celula.tipoEndereco === 'outro' ? this._celula.bairro : '',
           cidade: this._celula.tipoEndereco === 'outro' ? this._celula.cidade : cidade,
           complemento: this._celula.tipoEndereco === 'outro' ? this._celula.complemento : ''
-        }] : [],
+        }] : celulasPreservadas,
         foto: this._fotoBase64,
         consentimentoAceito: true,
         consentimentoAceitoEm: new Date().toISOString(),
