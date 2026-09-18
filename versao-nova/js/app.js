@@ -120,17 +120,13 @@ window.WaveApp = {
     }
   },
 
-  // Atualiza a lista de membros em tempo real (via Supabase Realtime) sempre que
-  // alguém preenche o cadastro público ou algo muda na tabela `pessoas` — sem
-  // precisar dar F5. Requer Realtime habilitado pra tabela `pessoas` no Supabase
-  // (Database > Replication no painel) — se não estiver habilitado, o canal
-  // conecta normalmente mas nenhum evento chega, e o app segue funcionando como
-  // antes (só sem o "instantâneo").
   // Rede de segurança contra dados/fotos desatualizados na tela: o Realtime cobre
   // a maioria dos casos, mas uma aba que ficou em segundo plano por um tempo pode
   // perder a conexão do websocket sem avisar. Isso resincroniza sozinho sempre que
   // a aba volta a ficar visível, e periodicamente como reforço — sem interromper
-  // quem estiver com um formulário/modal aberto no meio de uma edição.
+  // quem estiver com um formulário/modal aberto no meio de uma edição. O throttle
+  // de _autoSyncIntervaloMinimo evita re-renderizar a tela inteira (perdendo scroll,
+  // fechando menus abertos etc.) toda vez que a pessoa só troca de aba e volta rápido.
   _formularioAberto() {
     return !!(
       document.querySelector('.modal-overlay.open form') ||
@@ -139,36 +135,67 @@ window.WaveApp = {
     );
   },
 
+  _ultimoAutoSync: 0,
+  _autoSyncIntervaloMinimo: 90 * 1000,
+
+  _autoSyncSeNecessario() {
+    const agora = Date.now();
+    if (
+      document.visibilityState === 'visible' &&
+      WaveAuth.isAuthenticated() &&
+      !this._formularioAberto() &&
+      (agora - this._ultimoAutoSync) >= this._autoSyncIntervaloMinimo
+    ) {
+      this._ultimoAutoSync = agora;
+      WaveData.syncSupabase();
+    }
+  },
+
   iniciarAutoSync() {
     if (this._autoSyncAtivo) return;
     this._autoSyncAtivo = true;
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && WaveAuth.isAuthenticated() && !this._formularioAberto()) {
-        WaveData.syncSupabase();
-      }
-    });
-
-    setInterval(() => {
-      if (document.visibilityState === 'visible' && WaveAuth.isAuthenticated() && !this._formularioAberto()) {
-        WaveData.syncSupabase();
-      }
-    }, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => this._autoSyncSeNecessario());
+    setInterval(() => this._autoSyncSeNecessario(), 5 * 60 * 1000);
   },
 
+  // Atualiza a lista de membros em tempo real (via Supabase Realtime) sempre que
+  // alguém preenche o cadastro público ou algo muda na tabela `pessoas` — sem
+  // precisar dar F5. Requer Realtime habilitado pra tabela `pessoas` no Supabase
+  // (Database > Replication no painel) — se não estiver habilitado, o canal
+  // conecta normalmente mas nenhum evento chega, e o app segue funcionando como
+  // antes (só sem o "instantâneo").
   iniciarRealtimeMembros() {
     if (this._realtimeChannel || !window.supabaseClient) return;
 
-    const aplicarMudanca = (payload) => {
+    const aplicarMudanca = async (payload) => {
       // Evita atropelar formulários abertos (tanto modal do admin quanto cadastro público)
-      const formularioAberto = document.querySelector('.modal-overlay.open form') || 
-                               document.querySelector('#cadastro-publico-form') || 
+      const formularioAberto = document.querySelector('.modal-overlay.open form') ||
+                               document.querySelector('#cadastro-publico-form') ||
                                this._currentPage === 'cadastro-publico';
 
       if (payload.eventType === 'DELETE') {
         WaveData.membros = WaveData.membros.filter(m => m.id !== payload.old.id);
       } else {
-        const membro = WaveData._parsePessoaFromDB(payload.new);
+        // O payload.new que chega pelo websocket às vezes vem incompleto (ex: sem
+        // foto_url, provavelmente por causa do tamanho da selfie em base64) —
+        // confirmado empiricamente que isso apagava fotos válidas em memória sem
+        // nunca tocar no banco. Busca a linha completa e atual direto da tabela em
+        // vez de confiar no payload do evento, que serve só como um "avise que
+        // mudou algo em tal id".
+        const idAlvo = (payload.new && payload.new.id) || (payload.old && payload.old.id);
+        const { data: linhaCompleta, error: erroFetch } = await window.supabaseClient
+          .from('pessoas')
+          .select('*')
+          .eq('id', idAlvo)
+          .maybeSingle();
+
+        if (erroFetch || !linhaCompleta) {
+          console.warn('[Realtime] Falha ao buscar linha completa após mudança:', erroFetch);
+          return;
+        }
+
+        const membro = WaveData._parsePessoaFromDB(linhaCompleta);
         const idx = WaveData.membros.findIndex(m => m.id === membro.id);
         if (idx !== -1) {
           // Muta o objeto existente em vez de trocar a referência do array: se uma
