@@ -7,8 +7,11 @@
 
 /* Esconde o badge/HUD que o próprio Netlify injeta no HTML servido (fora do nosso
    controle — não existe no index.html, é adicionado pela infraestrutura deles).
+   O badge (.nl-wrap/.nl-badge) roda dentro de um <iframe id="nl-badge-frame">
+   próprio, então CSS mirando essas classes não alcança (regra de CSS não
+   atravessa pra dentro de iframe) — o que funciona é esconder o iframe em si.
    Puramente visual: não desativa nem interfere no funcionamento do site. */
-.nl-wrap {
+#nl-badge-frame {
   display: none !important;
 }
 
