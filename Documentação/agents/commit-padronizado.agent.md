@@ -16,7 +16,8 @@ Siga **exatamente** as regras do `GIT_WORKFLOW.md`:
 
 ### Prefixos Permitidos
 - **`spec`**: Inclusão/alteração de requisitos (regras, fluxos, critérios)
-- **`fix`**: Correção de erro documental (regra descrita incorretamente, link quebrado)
+- **`feat`**: Funcionalidade nova no código
+- **`fix`**: Correção de erro documental ou de código
 - **`docs`**: Ajustes textuais e organização geral (sem alterar requisitos)
 - **`chore`**: Manutenção técnica (pastas, renomeações, padronizações)
 
@@ -39,7 +40,7 @@ chore: padronizar nomes de arquivos do modulo ec
 ## Fluxo de Trabalho
 
 1. **Revisar alterações**: Execute `git status` e `git diff` para listar arquivos alterados, adicionados e removidos
-2. **Selecionar prefixo**: Analise as mudanças e escolha o prefixo apropriado (spec/fix/docs/chore)
+2. **Selecionar prefixo**: Analise as mudanças e escolha o prefixo apropriado (spec/feat/fix/docs/chore)
 3. **Criar título**: Máximo 50 caracteres, em português, ação clara no infinitivo
 4. **Criar descrição** (se necessário): Quando impacto relevante, explique O QUE e POR QUE
 5. **Adicionar arquivos**: Execute `git add .` (respeita automaticamente `.gitignore`)
@@ -48,7 +49,7 @@ chore: padronizar nomes de arquivos do modulo ec
 
 ## Constraints
 
-- **NUNCA** use prefixos como `feat`, `refactor`, `test` — apenas spec/fix/docs/chore
+- **NUNCA** use prefixos como `refactor`, `test` — apenas spec/feat/fix/docs/chore (`feat` só para código)
 - **NUNCA** adicione IDs de tarefas (REQ-001, DCU-601) no título do commit
 - **NUNCA** exceeda 50 caracteres no título após o `:`
 - **NUNCA** use pontuação ou MAIÚSCULAS no título

@@ -40,6 +40,7 @@ discovery/<ID-Tarefa>-<descricao>  – Estudos exploratórios
 bug/<ID-Tarefa>-<descricao>        – Correção de erros
 hotfix/<ID-Tarefa>-<descricao>     – Correções urgentes (merge direto em main)
 chore/<ID-Tarefa>-<descricao>      – Manutenção organizacional
+feature/<descricao>                – Mudanças de código (implementação)
 ```
 
 > **Importante:** O `<ID-Tarefa>` deve ser o **ID da tarefa de especificação criada pelo PO**, não do Épico/História de tema. Isso permite rastrear cada iteração/versão dos requisitos independentemente.
@@ -157,7 +158,7 @@ git branch -d spec/DCU-604-cadastro-ec
 ```
 
 Onde:
-- `<prefixo>`: spec | fix | docs | chore (não use feat, refactor, test)
+- `<prefixo>`: spec | feat | fix | docs | chore (não use refactor, test; `feat` só para código)
 - `<titulo>`: ação clara, máximo 50 caracteres, sem ponto final
 
 ### Prefixos Permitidos
@@ -165,7 +166,8 @@ Onde:
 | Prefixo | Uso | Exemplo |
 |---------|-----|---------|
 | **`spec`** | Inclusão/alteração de requisitos (regras, fluxos, critérios) | `spec: detalhar regras de ativacao de pdv` |
-| **`fix`** | Correção de erro documental (regra descrita incorretamente, link quebrado) | `fix: corrigir link do modulo de seguranca` |
+| **`feat`** | Funcionalidade nova no código | `feat: adicionar filtro por celula` |
+| **`fix`** | Correção de erro documental ou de código | `fix: corrigir link do modulo de seguranca` |
 | **`docs`** | Ajustes textuais e organização geral (sem alterar requisitos) | `docs: ajustar introducao da documentacao` |
 | **`chore`** | Manutenção técnica (pastas, renomeações, padronizações) | `chore: padronizar nomes de arquivos do modulo ec` |
 
