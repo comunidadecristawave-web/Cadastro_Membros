@@ -221,7 +221,7 @@ WavePages.admin = {
 
                       ${m.whatsapp ? `
                         <a href="https://wa.me/${m.whatsapp.replace(/\D/g, '')}?text=${msgEncoded}" target="_blank" class="btn btn-whatsapp aniversariante-acao" style="padding:7px 14px;font-size:0.78rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;font-weight:600;">
-                          <i data-lucide="message-circle" style="width:15px;height:15px;"></i> Enviar Parabéns
+                          ${WaveComponents.iconeWhatsApp(15)} Enviar Parabéns
                         </a>
                       ` : `
                         <span class="aniversariante-acao" style="font-size:0.7rem;color:var(--text-tertiary);text-align:center;">Sem WhatsApp</span>

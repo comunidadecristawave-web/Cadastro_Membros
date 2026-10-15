@@ -773,7 +773,7 @@ WavePages['admin-membros'] = {
                     <div>
                       <div class="ficha-field-label">WHATSAPP</div>
                       ${m.whatsapp ? `
-                        <a href="https://wa.me/${m.whatsapp.replace(/\D/g, '')}" target="_blank" class="ficha-field-value" style="color:var(--whatsapp);text-decoration:none;" title="Abrir conversa no WhatsApp">${m.whatsapp}</a>
+                        <a href="https://wa.me/${m.whatsapp.replace(/\D/g, '')}" target="_blank" class="ficha-field-value" style="color:var(--whatsapp);text-decoration:none;display:inline-flex;align-items:center;gap:6px;" title="Abrir conversa no WhatsApp">${WaveComponents.iconeWhatsApp(15)}${m.whatsapp}</a>
                       ` : `<strong class="ficha-field-value">—</strong>`}
                     </div>
                     <div>

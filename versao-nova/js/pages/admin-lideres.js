@@ -441,7 +441,7 @@ WavePages['admin-lideres'] = {
                     <h2 class="ficha-hero-name">${l.nome} 👑</h2>
                     <span class="ficha-hero-meta">${l.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'} · ${l.bairro || 'Centro'} (${l.cidade || 'Mandaguari'})</span>
                     <div style="font-size:var(--fs-label);margin-top:2px;">
-                      📱 ${l.whatsapp ? `<a href="https://wa.me/${l.whatsapp.replace(/\D/g, '')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--whatsapp);text-decoration:none;" title="Abrir conversa no WhatsApp">${l.whatsapp}</a>` : `<span style="color:var(--whatsapp);">—</span>`}
+                      ${l.whatsapp ? `<a href="https://wa.me/${l.whatsapp.replace(/\D/g, '')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--whatsapp);text-decoration:none;display:inline-flex;align-items:center;gap:5px;" title="Abrir conversa no WhatsApp">${WaveComponents.iconeWhatsApp(14)}${l.whatsapp}</a>` : `<span style="color:var(--text-tertiary);">Sem WhatsApp</span>`}
                     </div>
                   </div>
                   <span style="font-size:var(--fs-label);color:var(--text-tertiary);">Ver dados →</span>
@@ -492,7 +492,7 @@ WavePages['admin-lideres'] = {
                             </div>
                             <div>
                               <strong style="font-size:var(--fs-body);color:var(--white);display:block;">${d.nome} ${d.eLider ? '<span style="color:var(--warning);font-size:var(--fs-caption);">👑 (Líder)</span>' : ''}</strong>
-                              ${d.whatsapp ? `<a href="https://wa.me/${d.whatsapp.replace(/\D/g, '')}" target="_blank" onclick="event.stopPropagation()" style="font-size:var(--fs-caption);color:var(--whatsapp);text-decoration:none;" title="Abrir conversa no WhatsApp">${d.whatsapp}</a>` : `<span style="font-size:var(--fs-caption);color:var(--text-tertiary);">Sem WhatsApp</span>`}
+                              ${d.whatsapp ? `<a href="https://wa.me/${d.whatsapp.replace(/\D/g, '')}" target="_blank" onclick="event.stopPropagation()" style="font-size:var(--fs-caption);color:var(--whatsapp);text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Abrir conversa no WhatsApp">${WaveComponents.iconeWhatsApp(12)}${d.whatsapp}</a>` : `<span style="font-size:var(--fs-caption);color:var(--text-tertiary);">Sem WhatsApp</span>`}
                             </div>
                           </div>
                           <div style="display:flex;align-items:center;gap:8px;">
