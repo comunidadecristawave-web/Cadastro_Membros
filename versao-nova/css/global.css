@@ -721,6 +721,25 @@ input, textarea, select { font-family: inherit; }
   animation: scaleUp var(--duration-normal) var(--ease-out) both;
 }
 
+/* Redesenho de fundo (sync/Realtime — WaveApp.renderCurrentPage(true)): sem
+   animação de entrada, senão a tela "pisca" a cada atualização. Lista explícita
+   (não usar `*`, que congelaria spinners como .spin). Os itens de boas-vindas
+   partem de opacity:0, então precisam do estado final fixado. */
+#page-content.sem-animacao .animate-in,
+#page-content.sem-animacao .animate-scale,
+#page-content.sem-animacao .modal-sheet {
+  animation: none;
+}
+
+#page-content.sem-animacao .welcome-anim-1,
+#page-content.sem-animacao .welcome-anim-2,
+#page-content.sem-animacao .welcome-anim-3,
+#page-content.sem-animacao .welcome-anim-4 {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
 .card, .hub-card, .list-item, .card-stat-box {
   transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out);
 }

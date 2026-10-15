@@ -65,9 +65,7 @@ window.supabaseInitPromise = (async function initSupabase() {
     if (url && key && window.supabase && window.supabase.createClient) {
       window.supabaseClient = window.supabase.createClient(url, key);
       console.log('✅ Supabase conectado com sucesso!');
-      if (window.WaveData && window.WaveData.syncSupabase) {
-        window.WaveData.syncSupabase();
-      }
+      // A sync do carregamento é disparada por data.js (encadeada nesta promise).
       return window.supabaseClient;
     } else {
       console.warn('⚠️ Supabase: Credenciais não retornadas.');

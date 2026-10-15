@@ -122,52 +122,50 @@ window.WaveData = {
     return this.getFaixasArray(val);
   },
 
-  // Assinatura da última leitura crua do banco — permite pular o re-render por
-  // completo quando uma sincronização automática não encontra nenhuma mudança
-  // real (o caso mais comum), em vez de reconstruir a tela inteira à toa.
-  _ultimaAssinaturaSync: null,
+  // Linha crua do banco (JSON.stringify da linha de `pessoas`) por id, como foi lida
+  // pela última vez — pelo sync completo ou pelo Realtime. Serve para saber se algo
+  // mudou de verdade (cru × cru) antes de redesenhar a tela; comparar o objeto já
+  // parseado sempre daria diferente (addMembro/updateMembro deixam chaves extras).
+  _linhasCruas: {},
 
+  // Assinatura de todo o conjunto lido, derivada de _linhasCruas (ordenada por id) —
+  // permite pular o re-render por completo quando uma sincronização não encontra
+  // nenhuma mudança real (o caso mais comum). Como o Realtime também atualiza
+  // _linhasCruas, um sync logo depois de um evento já aplicado não redesenha de novo.
+  _assinaturaLinhasCruas() {
+    return Object.keys(this._linhasCruas).sort().map(id => this._linhasCruas[id]).join('\n');
+  },
+
+  // Sincronização SÓ LEITURA: busca `pessoas` e atualiza a memória. Nunca grava no
+  // banco — a normalização de faixa etária e a limpeza de autorreferência ficam só
+  // na exibição (_parsePessoaFromDB). Gravar aqui fazia todo carregamento do app
+  // regravar líderes e disparar eventos Realtime em rajada para todos os admins.
   async syncSupabase() {
     let houveMudanca = true;
     try {
       if (window.WaveSupabase) {
         const pessoasDB = await WaveSupabase.fetchPessoas();
         if (pessoasDB && pessoasDB.length > 0) {
-          const assinatura = JSON.stringify(pessoasDB);
-          houveMudanca = assinatura !== this._ultimaAssinaturaSync;
-          this._ultimaAssinaturaSync = assinatura;
+          const assinaturaAnterior = this._assinaturaLinhasCruas();
+          const linhas = {};
+          for (const p of pessoasDB) linhas[p.id] = JSON.stringify(p);
+          this._linhasCruas = linhas;
+          houveMudanca = this._assinaturaLinhasCruas() !== assinaturaAnterior;
 
           if (houveMudanca) {
-            this.membros = pessoasDB.map(p => this._parsePessoaFromDB(p));
+            // Mescla por id em vez de trocar os objetos: uma ficha aberta (ex:
+            // _membroDetalhes) segura a referência e precisa enxergar o dado novo —
+            // senão um "Editar" a partir dela pré-preenche valores velhos.
+            const novosPorId = new Map(pessoasDB.map(p => [p.id, this._parsePessoaFromDB(p)]));
+            this.membros = this.membros.filter(m => novosPorId.has(m.id));
+            for (const m of this.membros) {
+              const atual = novosPorId.get(m.id);
+              if (!atual) continue; // id duplicado em memória: o primeiro já consumiu
+              Object.assign(m, atual);
+              novosPorId.delete(m.id);
+            }
+            for (const novo of novosPorId.values()) this.membros.push(novo);
             this.recalcularEstatisticas();
-          }
-
-          // Migração pontual de dados legados no Supabase (ex: 'RIPE', 'Movement', etc.) e autorreferência
-          for (const p of pessoasDB) {
-            let precisouMigrar = false;
-            let celulas = [];
-            try {
-              celulas = typeof p.celulas_json === 'string' ? JSON.parse(p.celulas_json) : (p.celulas_json || []);
-            } catch (e) { celulas = []; }
-
-            const celulasNormalizadas = celulas.map(c => {
-              const fNormalizada = this.normalizarFaixaEtaria(c.faixaEtaria);
-              if (c.faixaEtaria !== fNormalizada) precisouMigrar = true;
-              return { ...c, faixaEtaria: fNormalizada };
-            });
-
-            if (precisouMigrar) {
-              WaveSupabase.updatePessoa(p.id, {
-                celulas_json: JSON.stringify(celulasNormalizadas)
-              }).catch(e => console.warn('Erro ao migrar dado legado no Supabase:', e));
-            }
-
-            // Sanitização de autorreferência (líder apontando para si mesmo)
-            const nomeL = (p.nome || '').trim().toLowerCase();
-            const liderL = (p.lider || '').trim().toLowerCase();
-            if (liderL && liderL !== '—' && (liderL === nomeL || nomeL.includes(liderL) || liderL.includes(nomeL))) {
-              WaveSupabase.updatePessoa(p.id, { lider: '—' }).catch(e => console.warn('Erro ao limpar autorreferência:', e));
-            }
           }
         }
       }
@@ -902,6 +900,11 @@ window.WaveData = {
   }
 };
 
+// Sync única no carregamento, só depois que o client do Supabase existe
+// (supabase.js carrega antes deste arquivo, então não chama WaveData por lá).
 document.addEventListener('DOMContentLoaded', () => {
-  WaveData.syncSupabase();
+  if (!window.supabaseInitPromise) return;
+  window.supabaseInitPromise.then(client => {
+    if (client) WaveData.syncSupabase();
+  });
 });

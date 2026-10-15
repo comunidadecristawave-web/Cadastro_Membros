@@ -65,9 +65,15 @@ window.WaveApp = {
     this.renderCurrentPage();
     this.updateNav();
 
-    if (WaveAuth.isAuthenticated()) {
-      this.iniciarRealtimeMembros();
-      this.iniciarAutoSync();
+    // Realtime/autosync só depois que o client do Supabase existe — no F5 com sessão
+    // salva o /api/config costuma responder depois do DOMContentLoaded.
+    if (window.supabaseInitPromise) {
+      window.supabaseInitPromise.then(() => {
+        if (WaveAuth.isAuthenticated()) {
+          this.iniciarRealtimeMembros();
+          this.iniciarAutoSync();
+        }
+      });
     }
 
     window.addEventListener('hashchange', () => {
@@ -138,16 +144,38 @@ window.WaveApp = {
   _ultimoAutoSync: 0,
   _autoSyncIntervaloMinimo: 90 * 1000,
 
+  // Sync que ficou devendo porque o Realtime reconectou com formulário aberto
+  // (não troca `membros` sob um formulário) — roda no próximo _autoSyncSeNecessario,
+  // sem esperar o throttle.
+  _syncPendente: false,
+
   _autoSyncSeNecessario() {
     const agora = Date.now();
     if (
       document.visibilityState === 'visible' &&
       WaveAuth.isAuthenticated() &&
       !this._formularioAberto() &&
-      (agora - this._ultimoAutoSync) >= this._autoSyncIntervaloMinimo
+      (this._syncPendente || (agora - this._ultimoAutoSync) >= this._autoSyncIntervaloMinimo)
     ) {
+      this._syncPendente = false;
       this._ultimoAutoSync = agora;
       WaveData.syncSupabase();
+    }
+  },
+
+  // Aba voltou ao foco: se o canal do Realtime caiu, reinscreve já (a sync vem ao
+  // confirmar SUBSCRIBED, cobrindo os eventos perdidos); senão, sync com throttle.
+  _aoVoltarFoco() {
+    if (document.visibilityState !== 'visible' || !WaveAuth.isAuthenticated()) return;
+    if (this._realtimeCaido()) {
+      if (this._realtimeTimerReconexao) {
+        clearTimeout(this._realtimeTimerReconexao);
+        this._realtimeTimerReconexao = null;
+      }
+      this._realtimeHouveQueda = true;
+      this._reinscreverRealtime();
+    } else {
+      this._autoSyncSeNecessario();
     }
   },
 
@@ -155,7 +183,7 @@ window.WaveApp = {
     if (this._autoSyncAtivo) return;
     this._autoSyncAtivo = true;
 
-    document.addEventListener('visibilitychange', () => this._autoSyncSeNecessario());
+    document.addEventListener('visibilitychange', () => this._aoVoltarFoco());
     setInterval(() => this._autoSyncSeNecessario(), 5 * 60 * 1000);
   },
 
@@ -165,72 +193,292 @@ window.WaveApp = {
   // (Database > Replication no painel) — se não estiver habilitado, o canal
   // conecta normalmente mas nenhum evento chega, e o app segue funcionando como
   // antes (só sem o "instantâneo").
+  //
+  // Estabilidade: eventos são agrupados por id numa janela curta (_LOTE_REALTIME_MS)
+  // e aplicados juntos, com no máximo 1 redesenho por lote — e só se alguma linha
+  // mudou de verdade. Quedas do canal são recuperadas com reinscrição e espera
+  // crescente; cada canal tem uma "geração" para ignorar callbacks de canais velhos.
+  _realtimeChannel: null,
+  _realtimeStatus: null,
+  _realtimeGeracao: 0,
+  _realtimeParado: true,
+  _realtimeTentativas: 0,
+  _realtimeTimerReconexao: null,
+  _realtimeReinscrevendo: false,
+  _realtimeHouveQueda: false,
+  _REALTIME_ESPERA_MAX_MS: 30 * 1000,
+  _filaRealtime: {},
+  _timerLoteRealtime: null,
+  _LOTE_REALTIME_MS: 300,
+  _LOTE_REALTIME_MAX_IDS: 50,         // ids por busca `in.(…)` (limite de URL em importações grandes)
+  _loteRealtimeEmAndamento: false,
+  _idsExcluidosRealtime: new Set(),
+  _realtimeTimerEstavel: null,        // zera o backoff só após o canal ficar estável
+  _REALTIME_ESTAVEL_MS: 30 * 1000,
+  _SYNC_RECONEXAO_MIN_MS: 10 * 1000,  // canal "piscando" não dispara sync a cada reconexão
+  _realtimeRemocao: null,             // removeChannel em andamento (logout) — aguardar antes de recriar
+
   iniciarRealtimeMembros() {
-    if (this._realtimeChannel || !window.supabaseClient) return;
+    this._realtimeParado = false;
+    if (this._realtimeChannel || this._realtimeReinscrevendo || !window.supabaseClient) return;
+    if (this._realtimeRemocao) {
+      // logout→login rápido: o canal antigo de mesmo tópico ainda está saindo
+      this._reinscreverRealtime();
+      return;
+    }
+    this._criarCanalRealtime();
+  },
 
-    const aplicarMudanca = async (payload) => {
-      // Evita atropelar formulários abertos (tanto modal do admin quanto cadastro público)
-      const formularioAberto = document.querySelector('.modal-overlay.open form') ||
-                               document.querySelector('#cadastro-publico-form') ||
-                               this._currentPage === 'cadastro-publico';
+  _limparTimerEstavel() {
+    if (this._realtimeTimerEstavel) {
+      clearTimeout(this._realtimeTimerEstavel);
+      this._realtimeTimerEstavel = null;
+    }
+  },
 
-      if (payload.eventType === 'DELETE') {
-        WaveData.membros = WaveData.membros.filter(m => m.id !== payload.old.id);
-      } else {
-        // O payload.new que chega pelo websocket às vezes vem incompleto (ex: sem
-        // foto_url, provavelmente por causa do tamanho da selfie em base64) —
-        // confirmado empiricamente que isso apagava fotos válidas em memória sem
-        // nunca tocar no banco. Busca a linha completa e atual direto da tabela em
-        // vez de confiar no payload do evento, que serve só como um "avise que
-        // mudou algo em tal id".
-        const idAlvo = (payload.new && payload.new.id) || (payload.old && payload.old.id);
-        const { data: linhaCompleta, error: erroFetch } = await window.supabaseClient
-          .from('pessoas')
-          .select('*')
-          .eq('id', idAlvo)
-          .maybeSingle();
+  _criarCanalRealtime() {
+    const geracao = ++this._realtimeGeracao;
+    this._realtimeStatus = null;
+    this._realtimeChannel = window.supabaseClient
+      .channel('pessoas-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pessoas' }, (payload) => {
+        if (geracao === this._realtimeGeracao && !this._realtimeParado) this._receberEventoRealtime(payload);
+      })
+      .subscribe((status) => this._aoStatusRealtime(status, geracao));
+  },
 
-        if (erroFetch || !linhaCompleta) {
-          console.warn('[Realtime] Falha ao buscar linha completa após mudança:', erroFetch);
-          return;
-        }
+  _realtimeCaido() {
+    if (this._realtimeParado || !window.supabaseClient || this._realtimeReinscrevendo) return false;
+    if (!this._realtimeChannel) return true;
+    return ['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(this._realtimeStatus);
+  },
 
-        const membro = WaveData._parsePessoaFromDB(linhaCompleta);
-        const idx = WaveData.membros.findIndex(m => m.id === membro.id);
-        if (idx !== -1) {
-          // Muta o objeto existente em vez de trocar a referência do array: se uma
-          // ficha ou formulário de edição já estava aberto segurando esse objeto
-          // (ex: this._membroDetalhes), ele continua enxergando os dados atualizados
-          // em vez de sobrescrever o banco com dados antigos ao salvar depois.
-          Object.assign(WaveData.membros[idx], membro);
+  // Status do canal (callback do subscribe). `geracao` omitida = canal atual.
+  _aoStatusRealtime(status, geracao = this._realtimeGeracao) {
+    if (geracao !== this._realtimeGeracao || this._realtimeParado) return;
+    this._realtimeStatus = status;
+
+    if (status === 'SUBSCRIBED') {
+      if (this._realtimeTimerReconexao) {
+        clearTimeout(this._realtimeTimerReconexao);
+        this._realtimeTimerReconexao = null;
+      }
+      // Só zera a espera crescente se o canal ficar de pé por um tempo — um canal que
+      // conecta e cai em seguida continua com o backoff alto.
+      this._limparTimerEstavel();
+      this._realtimeTimerEstavel = setTimeout(() => {
+        this._realtimeTimerEstavel = null;
+        this._realtimeTentativas = 0;
+      }, this._REALTIME_ESTAVEL_MS);
+      if (this._realtimeHouveQueda) {
+        // Eventos podem ter se perdido durante a queda: 1 sync para alinhar
+        // (no máximo a cada _SYNC_RECONEXAO_MIN_MS; senão fica pendente).
+        this._realtimeHouveQueda = false;
+        const agora = Date.now();
+        if (!this._formularioAberto() && (agora - this._ultimoAutoSync) >= this._SYNC_RECONEXAO_MIN_MS) {
+          this._ultimoAutoSync = agora;
+          WaveData.syncSupabase();
         } else {
-          WaveData.membros.push(membro);
-          if (!formularioAberto) {
-            this.showToast(`🆕 Novo cadastro: ${membro.nome}`, 'success');
+          this._syncPendente = true;
+        }
+      }
+      return;
+    }
+
+    if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+      this._limparTimerEstavel();
+      this._realtimeHouveQueda = true;
+      this._agendarReconexaoRealtime();
+    }
+  },
+
+  _agendarReconexaoRealtime() {
+    if (this._realtimeTimerReconexao || this._realtimeParado) return;
+    const espera = Math.min(1000 * Math.pow(2, this._realtimeTentativas), this._REALTIME_ESPERA_MAX_MS);
+    this._realtimeTentativas++;
+    this._realtimeTimerReconexao = setTimeout(() => {
+      this._realtimeTimerReconexao = null;
+      this._reinscreverRealtime();
+    }, espera);
+  },
+
+  async _reinscreverRealtime() {
+    if (this._realtimeParado || this._realtimeReinscrevendo || !window.supabaseClient) return;
+    this._realtimeReinscrevendo = true;
+    try {
+      const antigo = this._realtimeChannel;
+      // Invalida callbacks do canal antigo (inclusive o CLOSED gerado pelo removeChannel)
+      this._realtimeGeracao++;
+      this._realtimeChannel = null;
+      this._realtimeStatus = null;
+      if (antigo) {
+        // realtime-js reaproveita canal de mesmo tópico: precisa sair antes de recriar
+        try { await window.supabaseClient.removeChannel(antigo); } catch (e) {}
+      }
+      if (this._realtimeRemocao) await this._realtimeRemocao;
+    } finally {
+      this._realtimeReinscrevendo = false;
+    }
+    if (this._realtimeParado || this._realtimeChannel || !window.supabaseClient) return;
+    this._criarCanalRealtime();
+  },
+
+  // Recebe um evento do Realtime. O payload é só um SINAL ("algo mudou no id X"):
+  // nunca é usado como dado — o payload.new às vezes vem incompleto (ex: sem
+  // foto_url) e já apagou fotos válidas em memória. A linha é rebuscada no lote.
+  _receberEventoRealtime(payload) {
+    if (!payload) return;
+    const id = (payload.new && payload.new.id) || (payload.old && payload.old.id);
+    if (!id) return;
+    // DELETE sobrescreve um UPDATE/INSERT pendente do mesmo id (nunca rebusca id deletado)
+    this._filaRealtime[id] = payload.eventType === 'DELETE' ? 'DELETE' : 'UPSERT';
+    this._agendarLoteRealtime();
+  },
+
+  _agendarLoteRealtime() {
+    // Lotes são serializados: com um lote em andamento, os eventos novos esperam na
+    // fila e são processados quando ele terminar (busca antiga nunca sobrescreve nova).
+    if (this._timerLoteRealtime || this._loteRealtimeEmAndamento) return;
+    this._timerLoteRealtime = setTimeout(() => {
+      this._timerLoteRealtime = null;
+      this._processarLoteRealtime();
+    }, this._LOTE_REALTIME_MS);
+  },
+
+  async _processarLoteRealtime() {
+    if (this._loteRealtimeEmAndamento) return;
+    this._loteRealtimeEmAndamento = true;
+    try {
+      await this._aplicarLoteRealtime();
+    } finally {
+      this._loteRealtimeEmAndamento = false;
+      if (!this._realtimeParado && Object.keys(this._filaRealtime).length > 0) this._agendarLoteRealtime();
+    }
+  },
+
+  async _aplicarLoteRealtime() {
+    const fila = this._filaRealtime;
+    this._filaRealtime = {};
+    const ids = Object.keys(fila);
+    if (ids.length === 0) return;
+
+    const geracao = this._realtimeGeracao;
+    const idsExcluir = ids.filter(id => fila[id] === 'DELETE');
+    const idsBuscar = ids.filter(id => fila[id] !== 'DELETE');
+
+    let linhas = [];
+    let falhou = false;
+    if (idsBuscar.length > 0) {
+      if (!window.supabaseClient) {
+        falhou = true;
+      } else {
+        for (let i = 0; i < idsBuscar.length; i += this._LOTE_REALTIME_MAX_IDS) {
+          const parte = idsBuscar.slice(i, i + this._LOTE_REALTIME_MAX_IDS);
+          try {
+            const { data, error } = await window.supabaseClient
+              .from('pessoas')
+              .select('*')
+              .in('id', parte);
+            if (error) throw error;
+            linhas = linhas.concat(data || []);
+          } catch (e) {
+            console.warn('[Realtime] Falha ao buscar linhas após mudança:', e);
+            falhou = true;
           }
         }
       }
+    }
 
-      WaveData.recalcularEstatisticas();
-      if (!formularioAberto) {
-        this.renderCurrentPage(true);
-      } else if (this._currentPage === 'cadastro-publico' && window.WavePages && window.WavePages['cadastro-publico']) {
-        // Atualiza apenas a lista de líderes sem resetar os campos do formulário
-        window.WavePages['cadastro-publico'].atualizarListaLideres();
+    // Logout (ou troca de canal) durante a busca: não mexe em memória nem na tela
+    if (this._realtimeParado) return;
+    if (geracao !== this._realtimeGeracao) {
+      this._syncPendente = true;
+      return;
+    }
+    // Atualização perdida: o próximo _autoSyncSeNecessario recupera com sync completo
+    if (falhou) this._syncPendente = true;
+
+    idsExcluir.forEach(id => this._idsExcluidosRealtime.add(id));
+    let houveMudanca = false;
+    const novos = [];
+
+    for (const id of idsExcluir) {
+      delete WaveData._linhasCruas[id];
+      const antes = WaveData.membros.length;
+      WaveData.membros = WaveData.membros.filter(m => m.id !== id);
+      if (WaveData.membros.length !== antes) houveMudanca = true;
+    }
+
+    for (const linha of linhas) {
+      // Excluído enquanto a busca estava em andamento: não ressuscitar
+      if (!linha || !linha.id || this._idsExcluidosRealtime.has(linha.id)) continue;
+      const crua = JSON.stringify(linha);
+      if (WaveData._linhasCruas[linha.id] === crua) continue; // nada mudou de verdade
+      WaveData._linhasCruas[linha.id] = crua;
+
+      const membro = WaveData._parsePessoaFromDB(linha);
+      const existente = WaveData.membros.find(m => m.id === membro.id);
+      if (existente) {
+        // Muta o objeto existente em vez de trocar a referência: se uma ficha ou
+        // formulário de edição já estava aberto segurando esse objeto (ex:
+        // this._membroDetalhes), ele continua enxergando os dados atualizados em vez
+        // de sobrescrever o banco com dados antigos ao salvar depois.
+        Object.assign(existente, membro);
+      } else {
+        WaveData.membros.push(membro);
+        novos.push(membro);
       }
-    };
+      houveMudanca = true;
+    }
 
-    this._realtimeChannel = window.supabaseClient
-      .channel('pessoas-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pessoas' }, aplicarMudanca)
-      .subscribe();
+    if (!houveMudanca) return;
+
+    WaveData.recalcularEstatisticas();
+    // Evita atropelar formulários abertos (modal do admin ou cadastro público):
+    // os dados já estão em memória, só a tela não é redesenhada.
+    if (!this._formularioAberto()) {
+      // Referência externa fica oculta em todo o app — inclusive no toast
+      novos.filter(m => !m.referenciaExterna)
+        .forEach(m => this.showToast(`🆕 Novo cadastro: ${m.nome}`, 'success'));
+      this.renderCurrentPage(true);
+    } else if (this._currentPage === 'cadastro-publico' && window.WavePages && window.WavePages['cadastro-publico']) {
+      // Atualiza apenas a lista de líderes sem resetar os campos do formulário
+      window.WavePages['cadastro-publico'].atualizarListaLideres();
+    }
   },
 
   pararRealtimeMembros() {
+    this._realtimeParado = true;
+    this._realtimeGeracao++;
+    if (this._realtimeTimerReconexao) {
+      clearTimeout(this._realtimeTimerReconexao);
+      this._realtimeTimerReconexao = null;
+    }
+    if (this._timerLoteRealtime) {
+      clearTimeout(this._timerLoteRealtime);
+      this._timerLoteRealtime = null;
+    }
+    this._limparTimerEstavel();
+    this._filaRealtime = {};
+    this._idsExcluidosRealtime.clear();
     if (this._realtimeChannel && window.supabaseClient) {
-      window.supabaseClient.removeChannel(this._realtimeChannel);
+      // Guarda a remoção: um login logo em seguida espera ela terminar antes de
+      // recriar o canal (realtime-js reaproveita canal de mesmo tópico).
+      let remocao;
+      try {
+        remocao = Promise.resolve(window.supabaseClient.removeChannel(this._realtimeChannel)).catch(() => {});
+      } catch (e) {
+        remocao = Promise.resolve();
+      }
+      this._realtimeRemocao = remocao;
+      remocao.then(() => {
+        if (this._realtimeRemocao === remocao) this._realtimeRemocao = null;
+      });
     }
     this._realtimeChannel = null;
+    this._realtimeStatus = null;
+    this._realtimeTentativas = 0;
+    this._realtimeHouveQueda = false;
   },
 
   // preservarPosicao=true é pra re-renders disparados por dados chegando por trás
@@ -239,6 +487,9 @@ window.WaveApp = {
   renderCurrentPage(preservarPosicao = false) {
     const container = document.getElementById('page-content');
     if (!container) return;
+    // Boas-vindas não mostra dados de membros: redesenho de fundo só reiniciaria a
+    // barra de progresso e os timers de redirecionamento.
+    if (preservarPosicao && this._currentPage === 'boas-vindas') return;
 
     let scrollContainerSalvo = 0, scrollJanelaSalvo = 0, seletorFoco = null, selStart = null, selEnd = null;
     if (preservarPosicao) {
@@ -270,6 +521,9 @@ window.WaveApp = {
       `;
     }
 
+    // Redesenho de fundo (sync/Realtime) entra sem animação de entrada — senão a
+    // tela "pisca" a cada atualização. Navegação normal mantém as animações.
+    container.classList.toggle('sem-animacao', !!preservarPosicao);
     container.innerHTML = html;
 
     if (window.lucide) {
