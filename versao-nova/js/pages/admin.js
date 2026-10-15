@@ -266,7 +266,7 @@ WavePages.admin = {
     const template = templateInput ? templateInput.value.trim() : '';
 
     if (!titulo || !template) {
-      WaveApp.showToast('Preencha o título e a mensagem do modelo.', 'danger');
+      WaveApp.showToast('Preencha o título e a mensagem do modelo.', 'warning');
       return;
     }
 

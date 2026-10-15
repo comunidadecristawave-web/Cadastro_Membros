@@ -98,8 +98,13 @@ window.WaveAuth = {
           } else {
             return { ok: false, message: 'E-mail ou senha incorretos.' };
           }
+        } else if (!data && (!error || error.code === 'PGRST116')) {
+          // Nenhuma linha (e-mail inexistente ou acesso inativo): mesma mensagem da
+          // senha errada, para não revelar quais e-mails existem no sistema.
+          return { ok: false, message: 'E-mail ou senha incorretos.' };
         } else {
-          return { ok: false, message: 'Usuário não encontrado ou acesso inativo.' };
+          console.error('Falha na consulta de login no Supabase:', error);
+          return { ok: false, message: 'Erro ao conectar ao banco de dados. Verifique sua conexão e tente novamente.' };
         }
       } else {
         return { ok: false, message: 'Conexão com o banco de dados indisponível.' };

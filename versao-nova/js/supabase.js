@@ -11,7 +11,7 @@ window.supabaseInitPromise = (async function initSupabase() {
     if (typeof supabase === 'undefined' || !supabase.createClient) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3';
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
@@ -113,9 +113,6 @@ window.WaveSupabase = {
       const { data, error } = await client.from('pessoas').insert([pessoa]).select();
       if (error) {
         console.error('Erro ao salvar pessoa no Supabase:', error);
-        if (window.WaveApp && window.WaveApp.showToast) {
-          WaveApp.showToast('Erro no Banco: ' + (error.message || 'Falha ao salvar'), 'danger');
-        }
         return null;
       }
       return data ? data[0] : null;
@@ -132,9 +129,6 @@ window.WaveSupabase = {
       const { data, error } = await client.from('pessoas').update(dados).eq('id', id).select();
       if (error) {
         console.error('Erro ao atualizar pessoa no Supabase:', error);
-        if (window.WaveApp && window.WaveApp.showToast) {
-          WaveApp.showToast('Erro no Banco: ' + (error.message || 'Falha ao atualizar'), 'danger');
-        }
         return null;
       }
       return data ? data[0] : null;

@@ -15,60 +15,10 @@ WavePages['admin-lideres'] = {
   _filterCidade: 'todos',
   _filterSexo: 'todos',
   _showFiltrosDrawer: false,
-  _showColunasDropdown: false,
   _liderSelecionado: null,
   _origemFicha: null,
   _editandoLider: false,
   _fecharCelulaComRedistribuicao: null, // CT-CEL-02: Modal de redistribuição ao fechar célula com discípulos
-
-  // Colunas disponíveis para seleção dinâmica (Ponto 19)
-  _availableCols: [
-    { key: 'lider', label: 'Líder da Célula', required: true },
-    { key: 'finalidade', label: 'Finalidade' },
-    { key: 'faixaEtaria', label: 'Faixa Etária' },
-    { key: 'diaHorario', label: 'Dia / Horário' },
-    { key: 'discipulos', label: 'Discípulos' },
-    { key: 'endereco', label: 'Bairro / Cidade' },
-    { key: 'whatsapp', label: 'WhatsApp' }
-  ],
-  _visibleCols: ['lider', 'finalidade', 'faixaEtaria', 'diaHorario', 'discipulos', 'endereco', 'whatsapp'],
-
-  getColStorageKey() {
-    const user = WaveAuth.getUser ? WaveAuth.getUser() : null;
-    return 'wave_cols_celulas_' + (user && user.email ? user.email.toLowerCase() : 'default');
-  },
-
-  initCols() {
-    try {
-      const saved = localStorage.getItem(this.getColStorageKey());
-      if (saved) {
-        this._visibleCols = JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar colunas salvas:', e);
-    }
-  },
-
-  toggleCol(key) {
-    if (key === 'lider') return; // Líder sempre fixo
-    if (this._visibleCols.includes(key)) {
-      this._visibleCols = this._visibleCols.filter(c => c !== key);
-    } else {
-      this._visibleCols.push(key);
-    }
-    localStorage.setItem(this.getColStorageKey(), JSON.stringify(this._visibleCols));
-    WaveApp.renderCurrentPage();
-  },
-
-  isColVisible(key) {
-    return this._visibleCols.includes(key);
-  },
-
-  toggleColunasDropdown(e) {
-    if (e) e.stopPropagation();
-    this._showColunasDropdown = !this._showColunasDropdown;
-    WaveApp.renderCurrentPage();
-  },
 
   formatNameWords(name, maxWords) {
     if (!name || name === '—') return '—';
@@ -199,7 +149,7 @@ WavePages['admin-lideres'] = {
     const filtradas = this.applyAllFilters(todasCelulas);
 
     if (filtradas.length === 0) {
-      WaveApp.showToast('Nenhuma célula para exportar.', 'danger');
+      WaveApp.showToast('Nenhuma célula para exportar.', 'warning');
       return;
     }
 
@@ -237,7 +187,7 @@ WavePages['admin-lideres'] = {
     const filtradas = this.applyAllFilters(todasCelulas);
 
     if (filtradas.length === 0) {
-      WaveApp.showToast('Nenhuma célula para exportar.', 'danger');
+      WaveApp.showToast('Nenhuma célula para exportar.', 'warning');
       return;
     }
 
@@ -309,25 +259,6 @@ WavePages['admin-lideres'] = {
         </div>
 
         <div style="display:flex;gap:var(--space-sm);align-items:center;">
-          <!-- Botão Colunas com Dropdown (Ponto 19) -->
-          <div style="position:relative;" class="desktop-only">
-            <button class="btn btn-secondary" onclick="WavePages['admin-lideres'].toggleColunasDropdown(event)" style="padding:10px 14px;font-size:0.85rem;" title="Configurar Colunas">
-              <i data-lucide="columns-3" style="width:16px;height:16px;"></i> <span>Colunas</span>
-            </button>
-
-            ${this._showColunasDropdown ? `
-              <div class="card" style="position:absolute;right:0;top:46px;width:210px;z-index:9999;background:var(--bg-elevated);border:1px solid var(--border-medium);border-radius:var(--radius-md);padding:var(--space-sm);display:flex;flex-direction:column;gap:6px;box-shadow:0 12px 36px rgba(0,0,0,0.85);" onclick="event.stopPropagation();">
-                <span style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);padding:4px 8px;">Colunas Visíveis</span>
-                ${this._availableCols.map(c => `
-                  <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;padding:4px 8px;cursor:${c.required ? 'not-allowed' : 'pointer'};color:${c.required ? 'var(--text-tertiary)' : 'var(--text-primary)'};">
-                    <input type="checkbox" ${this.isColVisible(c.key) ? 'checked' : ''} ${c.required ? 'disabled' : ''} onchange="WavePages['admin-lideres'].toggleCol('${c.key}')" style="accent-color:var(--white);">
-                    ${c.label} ${c.required ? '(Fixo)' : ''}
-                  </label>
-                `).join('')}
-              </div>
-            ` : ''}
-          </div>
-
           <button class="btn btn-secondary desktop-only" onclick="WavePages['admin-lideres'].exportarCSV()" style="padding:10px 14px;font-size:0.85rem;" title="Exportar CSV">
             <i data-lucide="file-spreadsheet" style="width:16px;height:16px;"></i> <span>CSV</span>
           </button>
@@ -778,20 +709,10 @@ WavePages['admin-lideres'] = {
   },
 
   onMount() {
-    this.initCols();
-
     const input = document.getElementById('admin-lideres-search');
     if (input) {
       input.value = this._search;
     }
-
-    // Fechar dropdown de colunas ao clicar fora
-    document.addEventListener('click', (e) => {
-      if (this._showColunasDropdown) {
-        this._showColunasDropdown = false;
-        WaveApp.renderCurrentPage();
-      }
-    });
   },
 
   limparBusca() {

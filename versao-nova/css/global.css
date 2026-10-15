@@ -135,6 +135,11 @@
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
+/* Âmbar #FBBF24 some sobre fundo branco: no tema claro o toast de aviso usa um tom escuro (amber-700, contraste ~5:1) */
+[data-theme="light"] .toast-notification.warning {
+  --toast-cor: #B45309;
+}
+
 [data-theme="light"] .admin-navbar-brand img,
 [data-theme="light"] .login-brand img,
 [data-theme="light"] .welcome-logo {

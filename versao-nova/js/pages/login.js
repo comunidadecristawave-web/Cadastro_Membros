@@ -51,6 +51,9 @@ WavePages.login = {
                     <i data-lucide="eye" style="width:18px;height:18px;"></i>
                   </button>
                 </div>
+                <button type="button" onclick="WavePages.login.esqueciSenha()" style="align-self:flex-end;margin-top:6px;background:none;border:none;padding:0;color:var(--text-secondary);font-size:0.8rem;text-decoration:underline;cursor:pointer;">
+                  Esqueci minha senha
+                </button>
               </div>
 
               <!-- Checkbox Lembrar de Mim (Sessão de 7 dias) -->
@@ -82,6 +85,10 @@ WavePages.login = {
       iconBtn.innerHTML = `<i data-lucide="${this._showPassword ? 'eye-off' : 'eye'}" style="width:18px;height:18px;"></i>`;
       if (window.lucide) lucide.createIcons();
     }
+  },
+
+  esqueciSenha() {
+    WaveApp.alert('Fale com o administrador do sistema para redefinir sua senha.', 'Esqueci minha senha', 'info');
   },
 
   async handleSubmit(e) {

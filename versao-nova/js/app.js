@@ -431,22 +431,40 @@ window.WaveApp = {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
+    // 4 tipos com cor e ícone próprios; tipo desconhecido cai em 'success'
+    const icones = { success: 'check-circle', info: 'info', warning: 'alert-triangle', danger: 'alert-circle' };
+    if (!icones[type]) type = 'success';
+    const persistente = type === 'danger'; // erro fica até o usuário fechar
+
+    // Pilha de no máximo 3: remove o(s) mais antigo(s) antes de entrar o novo
+    const ativos = container.querySelectorAll('.toast-notification:not(.saindo)');
+    for (let i = 0; i <= ativos.length - 3; i++) ativos[i].remove();
+
     const toast = document.createElement('div');
-    toast.className = `toast-notification ${type === 'danger' ? 'danger' : ''}`;
+    toast.className = `toast-notification ${type}`;
+    toast.setAttribute('role', persistente ? 'alert' : 'status');
     toast.innerHTML = `
-      <i data-lucide="${type === 'danger' ? 'alert-circle' : 'check-circle'}" style="width:18px;height:18px;color:${type === 'danger' ? 'var(--danger)' : 'var(--success)'};"></i>
-      <span>${this.escapeHTML(message)}</span>
+      <i data-lucide="${icones[type]}" class="toast-icon"></i>
+      <span class="toast-msg">${this.escapeHTML(message)}</span>
+      ${persistente ? '<button type="button" class="toast-close" aria-label="Fechar"><i data-lucide="x" style="width:16px;height:16px;"></i></button>' : ''}
     `;
 
-    container.appendChild(toast);
-    if (window.lucide) lucide.createIcons();
-
-    setTimeout(() => {
+    const fechar = () => {
+      if (toast.classList.contains('saindo')) return;
+      toast.classList.add('saindo');
       toast.style.transition = 'all 0.3s var(--ease-out)';
       toast.style.opacity = '0';
       toast.style.transform = 'translateX(100%)';
       setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    };
+
+    const btnFechar = toast.querySelector('.toast-close');
+    if (btnFechar) btnFechar.addEventListener('click', fechar);
+
+    container.appendChild(toast);
+    if (window.lucide) lucide.createIcons();
+
+    if (!persistente) setTimeout(fechar, 4000);
   },
 
   // BUG-07: Sanitização estrita contra XSS

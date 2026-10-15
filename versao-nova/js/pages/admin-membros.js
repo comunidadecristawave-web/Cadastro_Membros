@@ -139,9 +139,18 @@ WavePages['admin-membros'] = {
       list = list.filter(m => m.lider === this._filterLider);
     }
 
-    if (this._search) {
-      const q = this._search.toLowerCase().trim();
-      list = list.filter(m => (m.nome || '').toLowerCase().includes(q));
+    if (this._search && this._search.trim()) {
+      const q = this.normalizarBusca(this._search.trim());
+      const qDigitos = this._search.replace(/\D/g, '');
+      list = list.filter(m => {
+        if (q && this.normalizarBusca(m.nome || '').includes(q)) return true;
+        // Busca por WhatsApp: só quando o termo tem dígitos
+        if (qDigitos) {
+          const telDigitos = String(m.whatsapp || '').replace(/\D/g, '');
+          if (telDigitos.includes(qDigitos)) return true;
+        }
+        return false;
+      });
     }
 
     // Ordenação
@@ -159,6 +168,11 @@ WavePages['admin-membros'] = {
     return list;
   },
 
+  // Minúsculas e sem acentos (NFD + remoção de diacríticos) para busca tolerante
+  normalizarBusca(texto) {
+    return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  },
+
   setSort(col) {
     if (this._sortCol === col) {
       this._sortAsc = !this._sortAsc;
@@ -174,7 +188,7 @@ WavePages['admin-membros'] = {
     const filtrados = this.applyAllFilters(todos);
 
     if (filtrados.length === 0) {
-      WaveApp.showToast('Nenhum membro na lista para exportar.', 'danger');
+      WaveApp.showToast('Nenhum membro na lista para exportar.', 'warning');
       return;
     }
 
@@ -215,7 +229,7 @@ WavePages['admin-membros'] = {
     const filtrados = this.applyAllFilters(todos);
 
     if (filtrados.length === 0) {
-      WaveApp.showToast('Nenhum membro na lista para exportar.', 'danger');
+      WaveApp.showToast('Nenhum membro na lista para exportar.', 'warning');
       return;
     }
 
@@ -286,6 +300,8 @@ WavePages['admin-membros'] = {
     // Paginação
     const totalItems = membrosFiltrados.length;
     const totalPages = Math.ceil(totalItems / this._pageSize) || 1;
+    if (this._currentPageNum > totalPages) this._currentPageNum = totalPages;
+    if (this._currentPageNum < 1) this._currentPageNum = 1;
     const startIndex = (this._currentPageNum - 1) * this._pageSize;
     const paginatedItems = membrosFiltrados.slice(startIndex, startIndex + this._pageSize);
 
@@ -335,7 +351,7 @@ WavePages['admin-membros'] = {
       <div style="display:flex;gap:var(--space-sm);align-items:center;margin-bottom:var(--space-md);position:relative;z-index:10;" class="animate-in">
         <div class="search-bar" style="flex:1;">
           <i data-lucide="search" class="search-icon"></i>
-          <input type="text" placeholder="Buscar por nome do membro..." id="admin-membros-search" value="${this._search}" oninput="WavePages['admin-membros'].onSearchInput(this.value)" autocomplete="off">
+          <input type="text" placeholder="Buscar por nome ou WhatsApp..." id="admin-membros-search" value="${this._search}" oninput="WavePages['admin-membros'].onSearchInput(this.value)" autocomplete="off">
         </div>
 
         <button id="btn-limpar-filtros-membros" class="btn btn-ghost" onclick="WavePages['admin-membros'].limparFiltros()" title="Limpar todos os filtros" style="display:${this.temFiltrosAtivos() ? 'inline-flex' : 'none'};color:var(--danger);white-space:nowrap;height:44px;padding:0 14px;border:1px dashed rgba(239, 68, 68, 0.4);border-radius:var(--radius-md);align-items:center;justify-content:center;gap:6px;background:rgba(239, 68, 68, 0.06);cursor:pointer;flex-shrink:0;">
@@ -354,9 +370,9 @@ WavePages['admin-membros'] = {
       </div>
 
       <!-- Contador de Resultados & Seletor de Página -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm);" class="animate-in">
+      <div id="membros-lista-topo" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm);" class="animate-in">
         <div style="font-size:0.85rem;color:var(--text-tertiary);">
-          Mostrando <strong style="color:var(--white);" id="membros-count">${paginatedItems.length}</strong> de <strong style="color:var(--white);">${totalItems}</strong> membro(s)
+          Mostrando <strong style="color:var(--white);" id="membros-count">${paginatedItems.length}</strong> de <strong style="color:var(--white);" id="membros-total">${totalItems}</strong> membro(s)
         </div>
 
         <div style="display:flex;align-items:center;gap:var(--space-sm);">
@@ -395,22 +411,14 @@ WavePages['admin-membros'] = {
         </table>
       </div>
 
-      <!-- Paginação Rodapé -->
-      ${totalPages > 1 ? `
-        <div style="display:flex;justify-content:center;align-items:center;gap:var(--space-sm);margin-top:var(--space-md);" class="animate-in">
-          <button class="btn btn-secondary" onclick="WavePages['admin-membros'].changePage(${this._currentPageNum - 1})" ${this._currentPageNum === 1 ? 'disabled' : ''} style="padding:6px 12px;font-size:0.8rem;">
-            Anterior
-          </button>
-          <span style="font-size:0.82rem;color:var(--text-secondary);">Página ${this._currentPageNum} de ${totalPages}</span>
-          <button class="btn btn-secondary" onclick="WavePages['admin-membros'].changePage(${this._currentPageNum + 1})" ${this._currentPageNum === totalPages ? 'disabled' : ''} style="padding:6px 12px;font-size:0.8rem;">
-            Próxima
-          </button>
-        </div>
-      ` : ''}
-
       <!-- 2) LISTA MOBILE -->
       <div id="membros-mobile-list" class="mobile-only animate-in" style="display:flex;flex-direction:column;gap:6px;">
         ${this.renderMobileList(paginatedItems)}
+      </div>
+
+      <!-- Paginação Rodapé (depois da lista; reconstruída em filterLive) -->
+      <div id="membros-paginacao" class="animate-in">
+        ${this.renderPaginacao(totalPages)}
       </div>
 
       <!-- Drawer Lateral de Filtros -->
@@ -839,7 +847,7 @@ WavePages['admin-membros'] = {
             <h3 class="sheet-title" style="color:var(--warning);display:flex;align-items:center;gap:6px;">
               👑 Redistribuição de Discípulos
             </h3>
-            <button class="sheet-close" onclick="WavePages['admin-membros']._membroParaRedistribuir = null; WaveApp.renderCurrentPage();">
+            <button class="sheet-close" onclick="WavePages['admin-membros'].fecharRedistribuicao()">
               <i data-lucide="x" style="width:18px;height:18px;"></i>
             </button>
           </div>
@@ -848,6 +856,26 @@ WavePages['admin-membros'] = {
         const liderInativado = this._membroParaRedistribuir;
         const discipulos = WaveData.getDiscipulosByLider(liderInativado.nome);
         const outrosLideres = WaveData.getAllLideresAtivos().filter(l => l.id !== liderInativado.id && l.sexo === liderInativado.sexo);
+        const escolhas = this._redistEscolhas || {};
+
+        if (outrosLideres.length === 0) {
+          return `
+              <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;">
+                  O líder <strong>${liderInativado.nome}</strong> possui <strong style="color:var(--white);">${discipulos.length} discípulo(s)</strong> vinculados a ele,
+                  mas não há outro líder ativo ${liderInativado.sexo === 'MASCULINO' ? 'masculino' : 'feminino'} para recebê-los.
+                </p>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;">
+                  Antes de inativar, torne outro discípulo líder (na ficha dele, em Membros) e tente novamente.
+                </p>
+                <div style="display:flex;gap:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+                  <button class="btn btn-secondary" onclick="WavePages['admin-membros'].fecharRedistribuicao()" style="flex:1;">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            `;
+        }
 
         return `
               <div style="display:flex;flex-direction:column;gap:var(--space-sm);flex:1;min-height:0;overflow:hidden;">
@@ -857,15 +885,13 @@ WavePages['admin-membros'] = {
                 </p>
 
                 <!-- Atalho: Aplicar a todos de uma vez -->
-                ${outrosLideres.length > 0 ? `
-                  <div style="background:var(--bg-elevated);padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);white-space:nowrap;">Definir para todos:</span>
-                    <select class="input-field" style="padding:4px 8px;font-size:0.8rem;flex:1;" onchange="WavePages['admin-membros'].aplicarLiderParaTodos(this.value)">
-                      <option value="">-- Escolha para preencher todos --</option>
-                      ${outrosLideres.map(l => `<option value="${l.nome}" data-lider-id="${l.id}">${l.nome}</option>`).join('')}
-                    </select>
-                  </div>
-                ` : ''}
+                <div style="background:var(--bg-elevated);padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);white-space:nowrap;">Definir para todos:</span>
+                  <select class="input-field" style="padding:4px 8px;font-size:0.8rem;flex:1;" onchange="WavePages['admin-membros'].aplicarLiderParaTodos(this.value)">
+                    <option value="">-- Escolha para preencher todos --</option>
+                    ${outrosLideres.map(l => `<option value="${l.nome}" data-lider-id="${l.id}" ${this._redistTodos === l.nome ? 'selected' : ''}>${l.nome}</option>`).join('')}
+                  </select>
+                </div>
 
                 <!-- Lista de Discípulos com Seletor Individual -->
                 <div style="flex:1;min-height:0;overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;gap:6px;margin:4px 0;">
@@ -879,8 +905,9 @@ WavePages['admin-membros'] = {
                         <span style="font-size:0.72rem;color:var(--text-tertiary);">${d.bairro || 'Mandaguari'} · ${d.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}</span>
                       </div>
                       <div style="flex-shrink:0;min-width:170px;">
-                        <select class="input-field select-redistribuir-individual" data-discipulo-id="${d.id}" style="padding:4px 8px;font-size:0.8rem;width:100%;">
-                          ${outrosLideres.map(l => `<option value="${l.nome}" data-lider-id="${l.id}">${l.nome}</option>`).join('')}
+                        <select class="input-field select-redistribuir-individual" data-discipulo-id="${d.id}" onchange="WavePages['admin-membros'].onRedistEscolha('${d.id}', this.value)" style="padding:4px 8px;font-size:0.8rem;width:100%;">
+                          <option value="" ${!escolhas[d.id] ? 'selected' : ''}>— Selecione —</option>
+                          ${outrosLideres.map(l => `<option value="${l.nome}" data-lider-id="${l.id}" ${escolhas[d.id] === l.nome ? 'selected' : ''}>${l.nome}</option>`).join('')}
                         </select>
                       </div>
                     </div>
@@ -888,7 +915,7 @@ WavePages['admin-membros'] = {
                 </div>
 
                 <div style="display:flex;gap:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);margin-top:auto;">
-                  <button class="btn btn-secondary" onclick="WavePages['admin-membros']._membroParaRedistribuir = null; WaveApp.renderCurrentPage();" style="flex:1;">
+                  <button class="btn btn-secondary" onclick="WavePages['admin-membros'].fecharRedistribuicao()" style="flex:1;">
                     Cancelar
                   </button>
                   <button class="btn btn-primary" id="btn-confirmar-redistribuicao" onclick="WavePages['admin-membros'].confirmarRedistribuicaoEInativar()" style="flex:1;background:var(--warning);color:var(--black);font-weight:700;">
@@ -929,6 +956,7 @@ WavePages['admin-membros'] = {
               <div class="input-group">
                 <label class="input-label">Líder Responsável Obrigatório * (Discipulado por)</label>
                 <select class="input-field" id="reativar-lider-responsavel-select">
+                  <option value="" selected>— Selecione —</option>
                   ${WaveData.getLideresPorSexo(this._membroParaReativar.sexo).map(l => `<option value="${l.nome}">${l.nome}</option>`).join('')}
                 </select>
               </div>
@@ -1077,7 +1105,7 @@ WavePages['admin-membros'] = {
                   <!-- Dia e Horário -->
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
                     <div class="input-group">
-                      <label class="input-label">Dia do Encontro *</label>
+                      <label class="input-label">Dia da Célula *</label>
                       <select class="input-field" name="diaSemana" required>
                         <option value="Terça" selected>Terça-feira</option>
                         <option value="Segunda">Segunda-feira</option>
@@ -1456,7 +1484,7 @@ WavePages['admin-membros'] = {
           if (window.lucide) lucide.createIcons();
         }
 
-        WaveApp.showToast('A célula deve possuir ao menos 1 faixa etária selecionada.', 'danger');
+        WaveApp.showToast('A célula deve possuir ao menos 1 faixa etária selecionada.', 'warning');
 
         // Some automaticamente após 3.5 segundos
         this._erroFaixaTimeout = setTimeout(() => {
@@ -1601,7 +1629,25 @@ WavePages['admin-membros'] = {
 
   changePage(page) {
     this._currentPageNum = page;
-    WaveApp.renderCurrentPage();
+    this.filterLive();
+    const topo = document.getElementById('membros-lista-topo');
+    if (topo) topo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+
+  // Botões Anterior/Próxima + "Página X de Y"; vazio quando há só 1 página
+  renderPaginacao(totalPages) {
+    if (totalPages <= 1) return '';
+    return `
+      <div style="display:flex;justify-content:center;align-items:center;gap:var(--space-sm);margin-top:var(--space-md);">
+        <button class="btn btn-secondary" onclick="WavePages['admin-membros'].changePage(${this._currentPageNum - 1})" ${this._currentPageNum === 1 ? 'disabled' : ''} style="padding:6px 12px;font-size:0.8rem;">
+          Anterior
+        </button>
+        <span style="font-size:0.82rem;color:var(--text-secondary);">Página ${this._currentPageNum} de ${totalPages}</span>
+        <button class="btn btn-secondary" onclick="WavePages['admin-membros'].changePage(${this._currentPageNum + 1})" ${this._currentPageNum === totalPages ? 'disabled' : ''} style="padding:6px 12px;font-size:0.8rem;">
+          Próxima
+        </button>
+      </div>
+    `;
   },
 
   setStatus(val) { this._filterStatus = val; this._currentPageNum = 1; this.filterLive(); },
@@ -1686,16 +1732,24 @@ WavePages['admin-membros'] = {
   filterLive() {
     const todosMembros = WaveData.getAllMembrosIgreja();
     const membrosFiltrados = this.applyAllFilters(todosMembros);
+    const totalItems = membrosFiltrados.length;
+    const totalPages = Math.ceil(totalItems / this._pageSize) || 1;
+    if (this._currentPageNum > totalPages) this._currentPageNum = totalPages;
+    if (this._currentPageNum < 1) this._currentPageNum = 1;
     const startIndex = (this._currentPageNum - 1) * this._pageSize;
     const paginatedItems = membrosFiltrados.slice(startIndex, startIndex + this._pageSize);
 
     const tbody = document.getElementById('membros-table-body');
     const mobileList = document.getElementById('membros-mobile-list');
     const countEl = document.getElementById('membros-count');
+    const totalEl = document.getElementById('membros-total');
+    const paginacaoEl = document.getElementById('membros-paginacao');
 
     if (tbody) tbody.innerHTML = this.renderDesktopRows(paginatedItems);
     if (mobileList) mobileList.innerHTML = this.renderMobileList(paginatedItems);
     if (countEl) countEl.textContent = paginatedItems.length;
+    if (totalEl) totalEl.textContent = totalItems;
+    if (paginacaoEl) paginacaoEl.innerHTML = this.renderPaginacao(totalPages);
 
     // Atualização reativa dos botões de Limpar e Indicadores
     const btnLimpar = document.getElementById('btn-limpar-filtros-membros');
@@ -1839,6 +1893,8 @@ WavePages['admin-membros'] = {
         if (discipulos.length > 0) {
           // Ponto 4: Exige modal de redistribuição
           this._membroParaRedistribuir = m;
+          this._redistEscolhas = {};
+          this._redistTodos = '';
           WaveApp.renderCurrentPage();
           return;
         }
@@ -1866,11 +1922,33 @@ WavePages['admin-membros'] = {
     }
   },
 
+  // Escolhas da redistribuição ficam em estado para sobreviver a re-render (Realtime/auto-sync)
+  _redistEscolhas: {},
+  _redistTodos: '',
+
+  onRedistEscolha(discipuloId, liderNome) {
+    if (!this._redistEscolhas) this._redistEscolhas = {};
+    if (liderNome) {
+      this._redistEscolhas[discipuloId] = liderNome;
+    } else {
+      delete this._redistEscolhas[discipuloId];
+    }
+  },
+
+  fecharRedistribuicao() {
+    this._membroParaRedistribuir = null;
+    this._redistEscolhas = {};
+    this._redistTodos = '';
+    WaveApp.renderCurrentPage();
+  },
+
   aplicarLiderParaTodos(liderNome) {
+    this._redistTodos = liderNome || '';
     if (!liderNome) return;
     const selects = document.querySelectorAll('.select-redistribuir-individual');
     selects.forEach(sel => {
       sel.value = liderNome;
+      this.onRedistEscolha(sel.getAttribute('data-discipulo-id'), liderNome);
     });
   },
 
@@ -1925,6 +2003,8 @@ WavePages['admin-membros'] = {
 
       const total = mapa.length;
       this._membroParaRedistribuir = null;
+      this._redistEscolhas = {};
+      this._redistTodos = '';
       WaveApp.showToast(`✅ ${total} discípulo(s) redistribuídos e ${liderInativado.nome} inativado com sucesso!`, 'success');
       WaveApp.renderCurrentPage();
     } finally {
@@ -2035,7 +2115,7 @@ WavePages['admin-membros'] = {
       const tipoEndereco = tipoEndEl ? tipoEndEl.value : 'residencial';
 
       if (!diaSemana || !horario) {
-        await WaveApp.alert('Por favor, defina o Dia do Encontro e o Horário da nova célula.', 'Campos Obrigatórios', 'warning');
+        await WaveApp.alert('Por favor, defina o Dia da Célula e o Horário da nova célula.', 'Campos Obrigatórios', 'warning');
         return;
       }
 
@@ -2113,7 +2193,7 @@ WavePages['admin-membros'] = {
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.style.opacity = '0.7';
-      submitBtn.innerHTML = `<span>Salvando no banco...</span>`;
+      submitBtn.innerHTML = `<span>Salvando...</span>`;
     }
 
     try {
@@ -2344,7 +2424,7 @@ WavePages['admin-membros'] = {
     const complemento = (data.get('complemento') || '').trim();
 
     if (!diaSemana || !horario) {
-      await WaveApp.alert('Por favor, informe o Dia do Encontro e o Horário da célula.', 'Campos Obrigatórios', 'warning');
+      await WaveApp.alert('Por favor, informe o Dia da Célula e o Horário da célula.', 'Campos Obrigatórios', 'warning');
       return;
     }
 

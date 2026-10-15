@@ -385,7 +385,7 @@ WavePages['cadastro-publico'] = {
     const faixas = this._celula.faixaEtaria;
     if (faixas.includes(faixa)) {
       if (faixas.length > 1) this._celula.faixaEtaria = faixas.filter(f => f !== faixa);
-      else { WaveApp.showToast('Selecione ao menos 1 faixa etária.', 'danger'); return; }
+      else { WaveApp.showToast('Selecione ao menos 1 faixa etária.', 'warning'); return; }
     } else {
       faixas.push(faixa);
     }

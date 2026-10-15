@@ -119,7 +119,7 @@ WavePages.importacao = {
 
     // Validação básica de tamanho (ex: max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      WaveApp.showToast('O arquivo CSV selecionado é muito grande (máximo 10MB).', 'danger');
+      WaveApp.showToast('O arquivo CSV selecionado é muito grande (máximo 10MB).', 'warning');
       return;
     }
 
@@ -260,12 +260,12 @@ WavePages.importacao = {
     const { rows, errors, delimiter } = this.parseCSV(text);
 
     if (errors.length > 0) {
-      WaveApp.showToast(`❌ Erro no formato do CSV: ${errors[0].message}`, 'danger');
+      WaveApp.showToast(`❌ Erro no formato do CSV: ${errors[0].message}`, 'warning');
       return;
     }
 
     if (rows.length <= 1) {
-      WaveApp.showToast('O arquivo CSV está vazio ou contém apenas o cabeçalho.', 'danger');
+      WaveApp.showToast('O arquivo CSV está vazio ou contém apenas o cabeçalho.', 'warning');
       return;
     }
 

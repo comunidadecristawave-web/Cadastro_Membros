@@ -100,7 +100,7 @@ WavePages['perfil-usuario'] = {
         </div>
 
         ${this._mensagemSucesso ? `
-          <div class="alert-card warning animate-in" style="margin-bottom:var(--space-md);background:var(--success-muted);border-color:var(--success-border);">
+          <div class="alert-card animate-in" style="margin-bottom:var(--space-md);background:var(--success-muted);border-color:var(--success-border);">
             <div class="alert-left" style="display:flex;align-items:center;gap:8px;">
               <i data-lucide="check-circle" style="width:20px;height:20px;color:var(--success);"></i>
               <span style="font-size:0.88rem;color:var(--success);font-weight:600;">${this._mensagemSucesso}</span>
@@ -464,7 +464,7 @@ WavePages['perfil-usuario'] = {
     const btnSubmit = document.getElementById('btn-salvar-perfil');
     if (btnSubmit) {
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;"></i> Gravando no banco...`;
+      btnSubmit.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;"></i> Salvando...`;
       if (window.lucide) lucide.createIcons();
     }
 
@@ -533,8 +533,8 @@ WavePages['perfil-usuario'] = {
 
       WaveApp.updateNav();
 
-      this._mensagemSucesso = 'Informações atualizadas e gravadas com sucesso no banco!';
-      WaveApp.showToast('Dados do perfil salvos no banco!', 'success');
+      this._mensagemSucesso = 'Alterações salvas.';
+      WaveApp.showToast('Perfil atualizado.', 'success');
       WaveApp.renderCurrentPage();
 
       setTimeout(() => {

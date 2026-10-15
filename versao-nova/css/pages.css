@@ -118,13 +118,15 @@
   pointer-events: none;
 }
 
+/* Cor do tipo (borda + ícone): success (padrão) | info | warning | danger */
 .toast-notification {
+  --toast-cor: var(--success);
   pointer-events: auto;
   min-width: 280px;
   max-width: 380px;
   background: var(--bg-card);
   border: 1px solid var(--border-medium);
-  border-left: 4px solid var(--success);
+  border-left: 4px solid var(--toast-cor);
   border-radius: var(--radius-md);
   padding: 12px 16px;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
@@ -137,8 +139,42 @@
   animation: slideInRight 0.3s var(--ease-out);
 }
 
-.toast-notification.danger {
-  border-left-color: var(--danger);
+.toast-notification.info { --toast-cor: var(--text-secondary); }
+.toast-notification.warning { --toast-cor: var(--warning); }
+.toast-notification.danger { --toast-cor: var(--danger); }
+
+.toast-notification .toast-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--toast-cor);
+}
+
+.toast-notification .toast-msg {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Erro persiste até o usuário fechar */
+.toast-notification .toast-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.toast-notification .toast-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
 }
 
 @keyframes slideInRight {
@@ -1238,8 +1274,10 @@
     box-sizing: border-box !important;
   }
 
+  /* Totalizadores do painel em lista no mobile: uma linha por indicador
+     ([ícone] TÍTULO ........ valor) */
   .cards-stat-grid {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important;
     gap: 8px !important;
     margin-bottom: var(--space-lg) !important;
   }
@@ -1250,13 +1288,32 @@
     border-radius: 12px !important;
   }
 
+  .card-stat-box:hover {
+    transform: none !important;
+  }
+
+  .card-stat-box-header {
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .card-stat-box-header > div:first-child {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
   .card-stat-box-title {
-    font-size: 0.65rem !important;
+    font-size: 0.75rem !important;
   }
 
   .card-stat-box-value {
     font-size: 1.3rem !important;
-    margin-top: 2px !important;
+    margin-top: 0 !important;
   }
 
   .card-stat-box-icon {
