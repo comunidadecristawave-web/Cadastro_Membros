@@ -64,4 +64,5 @@ Nunca coloque dados reais aqui.
 | `tests/dia-da-celula.spec.js` | Rótulo "Dia da Célula" (#11) |
 | `tests/smoke.spec.js` | Todas as rotas vivas sem erro de console |
 | `tests/guarda-rede.spec.js` | Autoteste da guarda de rede |
+| `tests/realtime-estavel.spec.js` | Sync só leitura, lote do Realtime, reconexão, sem animação em render de fundo |
 | `tests/achados-preexistentes.spec.js` | Bugs reais fora do escopo, marcados `test.fail()` |

@@ -15,30 +15,8 @@ const COLUNAS_PESSOAS = new Set([
 const marcarBugConhecido = () => { if (!process.env.MOSTRAR_ACHADOS) test.fail(); };
 
 test.describe('Achados pré-existentes (bugs do app)', () => {
-  test('abrir a lista não deveria gravar nada no banco', async ({ page, mock }) => {
-    // BUG (data.js syncSupabase, "migração pontual"): compara `c.faixaEtaria !== fNormalizada`,
-    // mas fNormalizada é sempre um array novo → a comparação é sempre true. Resultado: a cada
-    // sync (2x por carregamento) o app faz PATCH de celulas_json em TODOS os líderes, inclusive
-    // referência externa. Risco: sobrescrever edição concorrente com o snapshot lido.
-    marcarBugConhecido();
-    await abrirApp(page, 'admin-membros');
-    await page.waitForTimeout(1500);
-    expect(mock.writes, 'carregar a página não deve escrever no banco').toEqual([]);
-  });
-
-  test('Realtime deveria estar ativo após recarregar a página com sessão salva', async ({ page }) => {
-    // BUG (app.js init): iniciarRealtimeMembros() roda no DOMContentLoaded, antes de
-    // supabaseInitPromise criar o client → `!window.supabaseClient` → return. Só o login pelo
-    // formulário liga o Realtime; depois de um F5 a lista não se atualiza sozinha.
-    // É uma corrida: só acontece quando /api/config responde depois do DOMContentLoaded — o caso
-    // normal em produção (Netlify Function). O atraso abaixo torna o cenário determinístico.
-    marcarBugConhecido();
-    mock.atrasoConfigMs = 500;
-    await abrirApp(page, 'admin-membros');
-    await page.waitForTimeout(1500);
-    const ativo = await page.evaluate(() => !!WaveApp._realtimeChannel);
-    expect(ativo).toBe(true);
-  });
+  // "abrir a lista não grava no banco" e "Realtime ativo após F5" foram corrigidos e
+  // migraram para tests/realtime-estavel.spec.js.
 
   test('salvar perfil vinculado a uma pessoa não deveria gravar colunas inexistentes em pessoas', async ({ page, mock, context }) => {
     // BUG (perfil-usuario.js salvarPerfil): com pessoa_id, faz PATCH em `pessoas` com
