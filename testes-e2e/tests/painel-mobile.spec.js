@@ -7,13 +7,13 @@ test.describe('Painel — totalizadores no mobile', () => {
 
   test('ficam em lista, um por linha, com ícone à esquerda e valor à direita', async ({ page }) => {
     await abrirApp(page, 'admin');
-    await expect(cards(page)).toHaveCount(4);
+    await expect(cards(page)).toHaveCount(3);
 
     const caixas = [];
-    for (let i = 0; i < 4; i++) caixas.push(await cards(page).nth(i).boundingBox());
+    for (let i = 0; i < 3; i++) caixas.push(await cards(page).nth(i).boundingBox());
 
     // Um por linha: mesma coluna, largura cheia, cada um abaixo do anterior
-    for (let i = 1; i < 4; i++) {
+    for (let i = 1; i < 3; i++) {
       expect(Math.abs(caixas[i].x - caixas[0].x)).toBeLessThan(2);
       expect(caixas[i].y).toBeGreaterThan(caixas[i - 1].y + caixas[i - 1].height - 1);
     }

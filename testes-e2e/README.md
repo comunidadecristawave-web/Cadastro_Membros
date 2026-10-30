@@ -65,4 +65,5 @@ Nunca coloque dados reais aqui.
 | `tests/smoke.spec.js` | Todas as rotas vivas sem erro de console |
 | `tests/guarda-rede.spec.js` | Autoteste da guarda de rede |
 | `tests/realtime-estavel.spec.js` | Sync só leitura, lote do Realtime, reconexão, sem animação em render de fundo |
+| `tests/aniversariantes-bloco.spec.js` | Bloco "Próximos aniversariantes" do painel (30 dias, até 8, "Ver todos", 29/02, idade a completar) com relógio fixo |
 | `tests/achados-preexistentes.spec.js` | Bugs reais fora do escopo, marcados `test.fail()` |

@@ -35,10 +35,10 @@ test.describe('Ícone do WhatsApp antes do número', () => {
     await conferirLinksWhatsApp(page, 'ficha-celula');
   });
 
-  test('aniversariantes do mês', async ({ page, mock }) => {
-    // Garante um aniversariante no mês corrente (dado fictício)
-    const mes = String(new Date().getMonth() + 1).padStart(2, '0');
-    mock.db.pessoas.find(p => p.id === IDS.jose).data_nascimento = `1990-${mes}-15`;
+  test('próximos aniversariantes (modal "Ver todos")', async ({ page, mock }) => {
+    // Relógio fixo + um aniversariante nos próximos 30 dias (dado fictício)
+    await page.clock.setFixedTime(new Date('2026-10-30T12:00:00-03:00'));
+    mock.db.pessoas.find(p => p.id === IDS.jose).data_nascimento = '1990-11-15';
     await abrirApp(page, 'admin');
     await page.evaluate(() => WavePages.admin.abrirAniversariantesModal());
     await expect(page.locator('.modal-overlay.open')).toBeVisible();
