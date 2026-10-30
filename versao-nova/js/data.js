@@ -522,6 +522,55 @@ window.WaveData = {
     });
   },
 
+  // Data (meia-noite local) do próximo aniversário a partir de `hoje` (hoje incluso).
+  // Nascidos em 29/02 fazem aniversário em 28/02 nos anos não bissextos.
+  proximoAniversario(dataNascimento, hoje = new Date()) {
+    const nasc = this.parseDataLocal(dataNascimento);
+    if (Number.isNaN(nasc.getTime())) return null;
+    const base = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const noAno = (ano) => {
+      const bissexto = (ano % 4 === 0 && ano % 100 !== 0) || ano % 400 === 0;
+      const dia = (nasc.getMonth() === 1 && nasc.getDate() === 29 && !bissexto) ? 28 : nasc.getDate();
+      return new Date(ano, nasc.getMonth(), dia);
+    };
+    let data = noAno(base.getFullYear());
+    if (data < base) data = noAno(base.getFullYear() + 1);
+    return data;
+  },
+
+  // Aniversariantes ATIVOS e visíveis cujo próximo aniversário cai entre hoje e hoje+dias,
+  // em ordem de data. Retorna [{ membro, data, idade }] — idade = a que vai completar.
+  getProximosAniversariantes(dias = 30, hoje = new Date()) {
+    const base = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const DIA_MS = 24 * 60 * 60 * 1000;
+    return this.getMembrosVisiveis()
+      .filter(m => m.status === 'ATIVO' && m.dataNascimento)
+      .map(m => {
+        const data = this.proximoAniversario(m.dataNascimento, base);
+        if (!data) return null;
+        const diff = Math.round((data - base) / DIA_MS);
+        if (diff > dias) return null;
+        const idade = data.getFullYear() - this.parseDataLocal(m.dataNascimento).getFullYear();
+        return { membro: m, data, idade };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a.data - b.data) || String(a.membro.nome || '').localeCompare(String(b.membro.nome || ''), 'pt-BR'));
+  },
+
+  // Idade usada na mensagem de parabéns: a que a pessoa vai completar se o aniversário
+  // está nos próximos 30 dias (no próprio dia, a idade atual); fora disso, a idade atual.
+  idadeParaParabens(dataNascimento, hoje = new Date()) {
+    if (!dataNascimento) return null;
+    const nasc = this.parseDataLocal(dataNascimento);
+    if (Number.isNaN(nasc.getTime())) return null;
+    const base = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const data = this.proximoAniversario(dataNascimento, base);
+    if (data && Math.round((data - base) / (24 * 60 * 60 * 1000)) <= 30) {
+      return data.getFullYear() - nasc.getFullYear();
+    }
+    return this.calcIdade(dataNascimento);
+  },
+
   getModelosAniversario() {
     const padroes = [
       {
@@ -596,7 +645,7 @@ window.WaveData = {
 
   gerarMensagemParabens(membro, modeloId = 'espiritual') {
     const nome = membro.nome ? membro.nome.split(' ')[0] : 'Irmão(ã)';
-    const idade = membro.dataNascimento ? this.calcIdade(membro.dataNascimento) : null;
+    const idade = membro.dataNascimento ? this.idadeParaParabens(membro.dataNascimento) : null;
     const sexo = membro.sexo || 'MASCULINO';
     const tratamento = sexo === 'MASCULINO' ? 'querido' : 'querida';
     const complementoIdade = idade ? ` pelos seus ${idade} anos de vida` : '';

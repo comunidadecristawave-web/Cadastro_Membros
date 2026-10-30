@@ -1,6 +1,6 @@
 /* ============================================
    WAVE CÉLULAS — Admin Dashboard (Painel Pastoral)
-   (Especificação PO v1: Sem gráfico, Aniversariantes do Mês com WhatsApp individual)
+   (Especificação PO v1: Sem gráfico; bloco "Próximos aniversariantes" (30 dias) com WhatsApp individual)
    ============================================ */
 
 window.WavePages = window.WavePages || {};
@@ -16,7 +16,8 @@ WavePages.admin = {
     const todosMembros = WaveData.getAllMembrosIgreja();
     const membrosAtivos = todosMembros.filter(m => (m.status || 'ATIVO') === 'ATIVO');
     const lideresAtivos = WaveData.getAllLideresAtivos();
-    const aniversariantesMes = WaveData.getAniversariantesDoMes();
+    // Próximos 30 dias (hoje incluso), em ordem de data — bloco mostra até 8, modal mostra todos
+    const proximos = WaveData.getProximosAniversariantes(30);
 
     const membrosAtivosCount = membrosAtivos.length;
     const totalMembrosCadastrados = todosMembros.length;
@@ -25,7 +26,7 @@ WavePages.admin = {
     const modeloAtual = modelos.find(m => m.id === this._modeloSelecionado) || modelos[0];
 
     // Exemplo de pré-visualização para o modelo ativo
-    const exemploMembroPreview = aniversariantesMes.length > 0 ? aniversariantesMes[0] : { nome: 'João Silva', dataNascimento: '2000-01-01', sexo: 'MASCULINO' };
+    const exemploMembroPreview = proximos.length > 0 ? proximos[0].membro : { nome: 'João Silva', dataNascimento: '2000-01-01', sexo: 'MASCULINO' };
     const textoPreview = WaveData.gerarMensagemParabens(exemploMembroPreview, this._modeloSelecionado);
 
     return `
@@ -70,22 +71,6 @@ WavePages.admin = {
           </div>
         </div>
 
-        <!-- Aniversariantes do Mês (Clicável -> Modal com WhatsApp individual) -->
-        <div class="card-stat-box aniversariantes" onclick="WavePages.admin.abrirAniversariantesModal()" style="cursor:pointer;" title="Ver Aniversariantes do Mês">
-          <div class="card-stat-box-header">
-            <div>
-              <div class="card-stat-box-title">Aniversários do Mês</div>
-              <div class="card-stat-box-value">${aniversariantesMes.length}</div>
-            </div>
-            <div class="card-stat-box-icon">
-              <i data-lucide="cake" style="color:var(--warning);"></i>
-            </div>
-          </div>
-          <div class="card-stat-box-footer">
-            Neste mês: <span>${aniversariantesMes.length} aniversariante(s)</span>
-          </div>
-        </div>
-
         <!-- Líderes -->
         <div class="card-stat-box lideres" onclick="WaveApp.navigate('admin-lideres')" style="cursor:pointer;" title="Ver Líderes">
           <div class="card-stat-box-header">
@@ -101,7 +86,10 @@ WavePages.admin = {
 
       </div>
 
-      <!-- Modal: Aniversariantes do Mês com WhatsApp e Modelos de Mensagem -->
+      <!-- Bloco: Próximos aniversariantes (até 8; "Ver todos" abre o modal) -->
+      ${this._renderBlocoAniversariantes(proximos)}
+
+      <!-- Modal: Próximos aniversariantes com WhatsApp e Modelos de Mensagem -->
       <style>
         @media (max-width: 480px) {
           .aniversariante-item { flex-wrap: wrap; }
@@ -113,8 +101,8 @@ WavePages.admin = {
           <div class="sheet-handle"></div>
           <div class="sheet-header" style="align-items:flex-start;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px;min-width:0;flex:1;">
-              <h3 class="sheet-title" style="font-size:1.05rem;">🎉 Aniversariantes deste Mês</h3>
-              <span class="badge badge-success" style="font-size:0.75rem;white-space:nowrap;flex-shrink:0;">${aniversariantesMes.length} pessoa(s)</span>
+              <h3 class="sheet-title" style="font-size:1.05rem;">🎉 Próximos aniversariantes (30 dias)</h3>
+              <span class="badge badge-success" style="font-size:0.75rem;white-space:nowrap;flex-shrink:0;">${proximos.length} pessoa(s)</span>
             </div>
             <button class="sheet-close" onclick="WavePages.admin.fecharAniversariantesModal()" style="flex-shrink:0;margin-left:8px;">
               <i data-lucide="x" style="width:18px;height:18px;"></i>
@@ -191,19 +179,17 @@ WavePages.admin = {
 
             </div>
 
-            <!-- Lista de Aniversariantes do Mês -->
-            ${aniversariantesMes.length === 0 ? `
+            <!-- Lista completa dos próximos 30 dias -->
+            ${proximos.length === 0 ? `
               <div class="card empty-state" style="padding:var(--space-2xl);">
                 <i data-lucide="cake" style="width:40px;height:40px;color:var(--text-tertiary);"></i>
-                <p style="color:var(--text-secondary);margin-top:var(--space-sm);font-size:0.85rem;">Nenhum aniversariante registrado para este mês.</p>
+                <p style="color:var(--text-secondary);margin-top:var(--space-sm);font-size:0.85rem;">Nenhum aniversariante nos próximos 30 dias.</p>
               </div>
             ` : `
               <div style="display:flex;flex-direction:column;gap:8px;">
-                ${aniversariantesMes.map(m => {
-      const nasc = WaveData.parseDataLocal(m.dataNascimento);
-      const diaNasc = String(nasc.getDate()).padStart(2, '0');
-      const mesNasc = String(nasc.getMonth() + 1).padStart(2, '0');
-      const idade = WaveData.calcIdade(m.dataNascimento);
+                ${proximos.map(({ membro: m, data, idade }) => {
+      const diaNasc = String(data.getDate()).padStart(2, '0');
+      const mesNasc = String(data.getMonth() + 1).padStart(2, '0');
       const msgCustom = WaveData.gerarMensagemParabens(m, this._modeloSelecionado);
       const msgEncoded = encodeURIComponent(msgCustom);
 
@@ -215,7 +201,7 @@ WavePages.admin = {
                         </div>
                         <div style="min-width:0;flex:1;">
                           <strong style="font-size:0.88rem;color:var(--white);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${m.nome}">${m.nome}</strong>
-                          <span style="font-size:0.72rem;color:var(--warning);font-weight:600;">📅 ${diaNasc}/${mesNasc} (${idade} anos)</span>
+                          <span style="font-size:0.72rem;color:var(--warning);font-weight:600;">📅 ${diaNasc}/${mesNasc} (completa ${idade} anos)</span>
                         </div>
                       </div>
 
@@ -234,6 +220,58 @@ WavePages.admin = {
           </div>
         </div>
       </div>
+    `;
+  },
+
+  _MESES_ABREV: ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'],
+
+  // Bloco do painel: até 8 tiles (selo DIA/MÊS, foto, botão do WhatsApp sobre a foto, nome).
+  _renderBlocoAniversariantes(proximos) {
+    const LIMITE = 8;
+    const visiveis = proximos.slice(0, LIMITE);
+    const esc = (s) => WaveApp.escapeHTML(s || '');
+
+    const tiles = visiveis.map(({ membro: m, data }) => {
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = this._MESES_ABREV[data.getMonth()];
+      const nome = esc(m.nome);
+      const numero = m.whatsapp ? String(m.whatsapp).replace(/\D/g, '') : '';
+      const msg = numero ? encodeURIComponent(WaveData.gerarMensagemParabens(m, this._modeloSelecionado)) : '';
+      return `
+        <li class="aniv-tile">
+          <div class="aniv-foto-wrap">
+            <div class="aniv-foto">${WaveData.avatarConteudo(m)}</div>
+            <span class="aniv-selo" role="img" aria-label="${dia} de ${mes}">
+              <span class="aniv-selo-dia">${dia}</span>
+              <span class="aniv-selo-mes">${mes}</span>
+            </span>
+            ${numero ? `
+              <a class="aniv-whats" href="https://wa.me/${numero}?text=${msg}" target="_blank" rel="noopener"
+                 aria-label="Enviar parabéns para ${nome} no WhatsApp" title="Enviar parabéns no WhatsApp">${WaveComponents.iconeWhatsApp(18)}</a>
+            ` : ''}
+          </div>
+          <span class="aniv-nome" title="${nome}">${nome}</span>
+        </li>`;
+    }).join('');
+
+    return `
+      <section class="aniv-bloco animate-in" aria-labelledby="aniv-titulo">
+        <div class="aniv-header">
+          <h2 id="aniv-titulo" class="aniv-titulo">
+            <i data-lucide="cake" aria-hidden="true"></i> Próximos aniversariantes
+          </h2>
+          ${proximos.length > 0 ? `
+            <button type="button" class="aniv-ver-todos" onclick="WavePages.admin.abrirAniversariantesModal()">
+              Ver todos <i data-lucide="chevron-right" aria-hidden="true"></i>
+            </button>
+          ` : ''}
+        </div>
+        ${proximos.length === 0 ? `
+          <p class="aniv-vazio">Ninguém faz aniversário nos próximos 30 dias. 🎈</p>
+        ` : `
+          <ul class="aniv-grid">${tiles}</ul>
+        `}
+      </section>
     `;
   },
 
