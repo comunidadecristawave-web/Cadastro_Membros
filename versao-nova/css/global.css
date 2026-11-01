@@ -177,6 +177,13 @@
   color: #FFFFFF;
 }
 
+/* --white/--black invertem só pela metade no claro: chip ativo ficava preto sobre preto */
+[data-theme="light"] .chip.active {
+  background: #18181B;
+  color: #FFFFFF;
+  border-color: #18181B;
+}
+
 [data-theme="light"] .card-stat-box.membros {
   border-left-color: #18181B;
 }

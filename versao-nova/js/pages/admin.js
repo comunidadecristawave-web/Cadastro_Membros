@@ -40,10 +40,10 @@ WavePages.admin = {
       </div>
 
       <!-- Cards Estatísticos (Ponto 11) -->
-      <div class="cards-stat-grid animate-in" style="margin-bottom:var(--space-lg);">
+      <div class="cards-stat-grid animate-in">
         
         <!-- Membros Ativos -->
-        <div class="card-stat-box membros" onclick="WaveApp.navigate('admin-membros')" style="cursor:pointer;" title="Ver Listagem de Membros">
+        <div class="card-stat-box membros" role="link" tabindex="0" onclick="WaveApp.navigate('admin-membros')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();WaveApp.navigate('admin-membros')}" style="cursor:pointer;" title="Ver Listagem de Membros">
           <div class="card-stat-box-header">
             <div>
               <div class="card-stat-box-title">Membros Ativos</div>
@@ -59,7 +59,7 @@ WavePages.admin = {
         </div>
 
         <!-- Células Ativas (Clicável -> Células) -->
-        <div class="card-stat-box celulas" onclick="WaveApp.navigate('admin-lideres')" style="cursor:pointer;" title="Ver Listagem de Células">
+        <div class="card-stat-box celulas" role="link" tabindex="0" onclick="WaveApp.navigate('admin-lideres')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();WaveApp.navigate('admin-lideres')}" style="cursor:pointer;" title="Ver Listagem de Células">
           <div class="card-stat-box-header">
             <div>
               <div class="card-stat-box-title">Células Ativas</div>
@@ -72,7 +72,7 @@ WavePages.admin = {
         </div>
 
         <!-- Líderes -->
-        <div class="card-stat-box lideres" onclick="WaveApp.navigate('admin-lideres')" style="cursor:pointer;" title="Ver Líderes">
+        <div class="card-stat-box lideres" role="link" tabindex="0" onclick="WaveApp.navigate('admin-lideres')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();WaveApp.navigate('admin-lideres')}" style="cursor:pointer;" title="Ver Líderes">
           <div class="card-stat-box-header">
             <div>
               <div class="card-stat-box-title">Líderes de Célula</div>
@@ -319,16 +319,16 @@ WavePages.admin = {
   onMount() {
     if (window.WaveMapaCelulas) {
       WaveMapaCelulas.montar(document.getElementById('mapa-celulas-area'), {
-        aoAbrirFicha: (liderId) => this.abrirFichaDoMapa(liderId)
+        aoAbrirFicha: (liderId, celulaId) => this.abrirFichaDoMapa(liderId, celulaId)
       });
     }
   },
 
   // "Abrir ficha" do balão: fecha o balão e vai para Células com a ficha do líder aberta
-  abrirFichaDoMapa(liderId) {
+  abrirFichaDoMapa(liderId, celulaId) {
     if (window.WaveMapaCelulas) WaveMapaCelulas.fecharBalao();
     const celulas = WavePages['admin-lideres'];
-    if (celulas && celulas.prepararFicha) celulas.prepararFicha(liderId);
+    if (celulas && celulas.prepararFicha) celulas.prepararFicha(liderId, celulaId);
     WaveApp.navigate('admin-lideres');
   },
 

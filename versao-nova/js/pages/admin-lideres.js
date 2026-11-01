@@ -17,6 +17,7 @@ WavePages['admin-lideres'] = {
   _showFiltrosDrawer: false,
   _liderSelecionado: null,
   _origemFicha: null,
+  _celulaDestaque: null,
   _editandoLider: false,
   _fecharCelulaComRedistribuicao: null, // CT-CEL-02: Modal de redistribuição ao fechar célula com discípulos
 
@@ -452,7 +453,7 @@ WavePages['admin-lideres'] = {
                   <h4 class="ficha-section-title" style="color:var(--warning);">Células Lideradas (${celulas.length})</h4>
                   <div style="display:flex;flex-direction:column;gap:8px;">
                     ${celulas.map((c, i) => `
-                      <div style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:var(--fs-body);">
+                      <div data-celula-id="${WaveApp.escapeHTML(String(c.id || ''))}" style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:var(--fs-body);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                           <strong style="color:var(--white);">Célula ${i + 1} — ${c.finalidade}</strong>
                           <div style="display:flex;align-items:center;gap:6px;">
@@ -713,6 +714,7 @@ WavePages['admin-lideres'] = {
     if (input) {
       input.value = this._search;
     }
+    this._destacarCelulaNaFicha();
   },
 
   limparBusca() {
@@ -803,16 +805,32 @@ WavePages['admin-lideres'] = {
 
   // Deixa a ficha do líder pronta para abrir no próximo render de Células, sem renderizar
   // agora (usado pelo "Abrir ficha" do mapa do painel antes do navigate).
-  prepararFicha(liderId) {
+  // `celulaId` (opcional): a ficha abre rolada até essa célula, com destaque breve.
+  prepararFicha(liderId, celulaId = null) {
     const l = WaveData.getAllLideresAtivos().find(item => item.id === liderId);
     if (!l) return false;
     this._liderSelecionado = l;
     this._editandoLider = false;
     this._origemFicha = null;
+    this._celulaDestaque = celulaId;
     return true;
   },
 
+  // Chamado no onMount: rola a ficha aberta até a célula pedida e a destaca por 2,5 s
+  _destacarCelulaNaFicha() {
+    const id = this._celulaDestaque;
+    this._celulaDestaque = null;
+    if (!id) return;
+    const alvo = Array.from(document.querySelectorAll('.modal-overlay.open [data-celula-id]'))
+      .find(el => el.dataset.celulaId === String(id));
+    if (!alvo) return;
+    try { alvo.scrollIntoView({ block: 'center' }); } catch (e) {}
+    alvo.classList.add('ficha-celula-destaque');
+    setTimeout(() => alvo.classList.remove('ficha-celula-destaque'), 2500);
+  },
+
   fecharFicha() {
+    this._celulaDestaque = null;
     this._liderSelecionado = null;
     this._editandoLider = false;
     this._origemFicha = null;

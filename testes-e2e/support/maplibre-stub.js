@@ -1,7 +1,8 @@
 /* Stub do MapLibre GL JS para a suíte (sem WebGL, sem tiles, sem rede).
    Implementa só o que js/mapa-celulas.js usa. O pino é o próprio elemento do app
    (<div class="mapa-celulas-pino" data-lat data-lng data-sexo>), anexado ao container.
-   O container do mapa expõe data-estilo, data-centro ("lat,lng") e data-zoom.
+   O container do mapa expõe data-estilo, data-centro ("lat,lng"), data-zoom e, após
+   fitBounds, data-enquadre ("minLat,minLng,maxLat,maxLng").
    window.__mapasCriados conta quantos `new Map` aconteceram. */
 (function () {
   if (window.maplibregl && window.maplibregl.__stub) return;
@@ -39,6 +40,16 @@
       this._container.dataset.zoom = String(this._zoom);
       return this;
     }
+    // Enquadre: centro no meio da caixa; data-enquadre = "minLat,minLng,maxLat,maxLng"
+    fitBounds(b, o) {
+      const [[minLng, minLat], [maxLng, maxLat]] = b;
+      this.enquadres = (this.enquadres || 0) + 1;
+      this._container.dataset.enquadre = `${minLat},${minLng},${maxLat},${maxLng}`;
+      this.jumpTo({ center: [(minLng + maxLng) / 2, (minLat + maxLat) / 2], zoom: (o && o.maxZoom) || 14 });
+      this.fire('moveend');
+      return this;
+    }
+    getBounds() { return { contains: () => true }; }
     getCenter() { return { ...this._center }; }
     getZoom() { return this._zoom; }
     addControl() { return this; }

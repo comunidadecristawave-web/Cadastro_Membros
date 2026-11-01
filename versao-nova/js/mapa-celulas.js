@@ -7,7 +7,9 @@
    - Singleton: o elemento do mapa sobrevive ao renderCurrentPage (Realtime/sync) —
      cada onMount do painel só o reanexa no slot, faz resize e o diff dos pinos.
    - Nunca escreve em `pessoas`: a única escrita é o upsert em geocodificacao_enderecos.
-   - Balão montado com createElement/textContent (sem HTML vindo do cadastro).
+   - Detalhe da célula num cartão logo abaixo do mapa (não popup: no celular o popup
+     ficava cortado e atrás da bottom nav), montado com createElement/textContent.
+   - Enquadra os pinos da cidade/filtro (fitBounds) enquanto o usuário não mexeu no mapa.
    ============================================ */
 
 window.WaveMapaCelulas = {
@@ -19,6 +21,7 @@ window.WaveMapaCelulas = {
   ESTILO_CLARO: 'https://tiles.openfreemap.org/styles/positron',
   ESTILO_ESCURO: 'https://tiles.openfreemap.org/styles/dark',
   ZOOM_CIDADE: 13,
+  ZOOM_MAX_ENQUADRE: 14,    // com 1 pino só, ainda mostra o bairro em volta
   TIMEOUT_CARGA_MS: 15000,
   TIMEOUT_NOMINATIM_MS: 10000,
   ESPERA_NOVA_TENTATIVA_MS: 30000,
@@ -34,8 +37,10 @@ window.WaveMapaCelulas = {
   _avisoEl: null,
   _map: null,
   _markers: new Map(),       // id do pino → { marker, el, cel, offset, assinatura }
-  _balao: null,
+  _detalheEl: null,          // cartão da célula selecionada (irmão do slot do mapa)
   _balaoId: null,
+  _usuarioMoveu: false,      // arrastou/deu zoom: para de reenquadrar sozinho
+  _assinaturaEnquadre: '',
   _observerTema: null,
   _estiloAtual: null,
   _estiloCarregado: false,
@@ -92,10 +97,16 @@ window.WaveMapaCelulas = {
     }
     this._sincronizar();
     this._garantirMapa();
+    this._aplicarEstadoErro();
     // A cidade atual sumiu dos dados (ex.: única célula da cidade foi apagada) e o estado
     // voltou para o padrão: recentraliza uma vez.
     if (this._map && this._cidadeCentralizada && this._cidadeCentralizada !== this._cidadeAtual) {
-      this._centralizarCidade(this._cidadeAtual);
+      if (!this._enquadrar(true)) this._centralizarCidade(this._cidadeAtual);
+    }
+    // Render de fundo recriou o bloco: o cartão aberto volta para baixo do novo slot
+    if (this._balaoId) {
+      if (this._markers.has(this._balaoId)) this._abrirBalao(this._balaoId, { rolar: false });
+      else this.fecharBalao();
     }
   },
 
@@ -104,11 +115,13 @@ window.WaveMapaCelulas = {
   trocarCidade(valor) {
     if (!valor || valor === this._cidadeAtual) return;
     this._cidadeAtual = valor;
+    this._usuarioMoveu = false;
     this.fecharBalao();
     this._esconderAviso();
     this._atualizarPinos();
     this._atualizarContador();
-    this._centralizarCidade(valor);
+    // Com pinos, enquadra os pinos; sem nenhum (ainda), vai para o centro da cidade
+    if (!this._enquadrar(true)) this._centralizarCidade(valor);
   },
 
   // Filtro por finalidade: só troca pinos/contador e o estado dos chips (sem re-render do painel)
@@ -125,12 +138,16 @@ window.WaveMapaCelulas = {
     this._atualizarContador();
   },
 
-  fecharBalao() {
-    if (this._balao) {
-      const b = this._balao;
-      this._balao = null;
-      this._balaoId = null;
-      try { b.remove(); } catch (e) {}
+  fecharBalao(opcoes = {}) {
+    const id = this._balaoId;
+    if (this._detalheEl) this._detalheEl.remove();
+    this._detalheEl = null;
+    this._balaoId = null;
+    const m = id && this._markers.get(id);
+    if (m) {
+      m.el.classList.remove('ativo');
+      m.el.setAttribute('aria-expanded', 'false');
+      if (opcoes.focarPino) { try { m.el.focus(); } catch (e) {} }
     }
   },
 
@@ -153,6 +170,8 @@ window.WaveMapaCelulas = {
     this._celulas = [];
     this._cidadeAtual = null;
     this._finalidadeAtual = 'todas';
+    this._usuarioMoveu = false;
+    this._assinaturaEnquadre = '';
     this._cidadeCentralizada = null;
     this._cachePromise = null;
     this._cacheLido = false;
@@ -178,6 +197,7 @@ window.WaveMapaCelulas = {
       return {
         id,
         liderId: c.liderId,
+        celulaId: c.celulaId || null, // id real da célula (o "Abrir ficha" rola até ela)
         liderNome: c.liderNome || '',
         sexo: c.liderSexo === 'FEMININO' ? 'FEMININO' : 'MASCULINO',
         finalidade: c.finalidade === 'Liderança' ? 'Liderança' : 'Evangelística',
@@ -404,7 +424,8 @@ window.WaveMapaCelulas = {
       this._mostrarAviso(`Não foi possível localizar ${info ? info.rotulo : 'esta cidade'} no mapa; ele continua na posição anterior.`);
       return;
     }
-    if (this._map) {
+    // Pinos apareceram enquanto buscava o centro: o enquadre deles já posicionou o mapa
+    if (this._map && !this._markers.size) {
       try { this._map.jumpTo({ center: [centro.lng, centro.lat], zoom: this.ZOOM_CIDADE }); } catch (e) {}
     }
   },
@@ -434,14 +455,53 @@ window.WaveMapaCelulas = {
     this._avisoEl = aviso;
   },
 
-  _mostrarErro(msg) {
+  // Falha de carga ganha "Tentar de novo"; sem WebGL não (outra tentativa não muda nada)
+  _mostrarErro(msg, { tentarDeNovo = false } = {}) {
     if (!this._erroEl) return;
-    this._erroEl.textContent = msg;
+    this._erroEl.textContent = '';
+    const p = document.createElement('p');
+    p.textContent = msg;
+    this._erroEl.appendChild(p);
+    if (tentarDeNovo) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-secondary mapa-celulas-erro-btn';
+      btn.textContent = 'Tentar de novo';
+      btn.addEventListener('click', () => this._tentarDeNovo());
+      this._erroEl.appendChild(btn);
+    }
     this._erroEl.hidden = false;
+    this.fecharBalao();
+    this._aplicarEstadoErro();
   },
 
   _esconderErro() {
     if (this._erroEl) this._erroEl.hidden = true;
+    this._aplicarEstadoErro();
+  },
+
+  _tentarDeNovo() {
+    if (this._map) {
+      // Estilo/tiles não carregaram: recria o mapa do zero
+      this._markers.forEach(m => { try { m.marker.remove(); } catch (e) {} });
+      this._markers.clear();
+      if (this._timerEstilo) { clearTimeout(this._timerEstilo); this._timerEstilo = null; }
+      try { this._map.remove(); } catch (e) {}
+      this._map = null;
+      this._assinaturaEnquadre = '';
+    }
+    this._falhaLibEm = 0;
+    this._esconderErro();
+    this._garantirMapa();
+  },
+
+  // Com o mapa indisponível, filtro e seletor de cidade ficam desabilitados (não fariam nada)
+  _aplicarEstadoErro() {
+    const bloco = this._wrap && this._wrap.closest('.mapa-celulas-bloco');
+    if (!bloco) return;
+    const erro = !!(this._erroEl && !this._erroEl.hidden);
+    bloco.classList.toggle('mapa-celulas-indisponivel', erro);
+    bloco.querySelectorAll('.mapa-celulas-filtro .chip, .mapa-celulas-cidade').forEach(el => { el.disabled = erro; });
   },
 
   _mostrarAviso(msg) {
@@ -522,7 +582,7 @@ window.WaveMapaCelulas = {
       this._criandoMapa = false;
       if (geracao !== this._geracao) return;
       this._falhaLibEm = Date.now();
-      this._mostrarErro(this.MSG_FALHA);
+      this._mostrarErro(this.MSG_FALHA, { tentarDeNovo: true });
     });
   },
 
@@ -540,9 +600,10 @@ window.WaveMapaCelulas = {
         zoom: this.ZOOM_CIDADE,
         cooperativeGestures: true,
         // Atribuição OpenFreeMap/OpenMapTiles/OpenStreetMap vem do próprio estilo;
-        // compacta (botão "i") automaticamente em telas estreitas.
-        attributionControl: {},
+        // sempre compacta (botão "i", recolhida no load) para não cobrir o mapa.
+        attributionControl: { compact: true },
         locale: {
+          'Map.Title': 'Mapa das células',
           'CooperativeGesturesHandler.WindowsHelpText': 'Use Ctrl + rolagem para dar zoom no mapa',
           'CooperativeGesturesHandler.MacHelpText': 'Use ⌘ + rolagem para dar zoom no mapa',
           'CooperativeGesturesHandler.MobileHelpText': 'Use dois dedos para mover o mapa',
@@ -562,11 +623,17 @@ window.WaveMapaCelulas = {
     }
 
     try { this._map.addControl(new lib.NavigationControl({ showCompass: false }), 'top-right'); } catch (e) {}
+    try { this._map.addControl(this._controleVerTodas(), 'top-right'); } catch (e) {}
     // Erros de tile/estilo não viram console.error nem derrubam o painel
     this._map.on('error', () => {});
+    // Gesto do usuário (originalEvent) para o reenquadre automático; fitBounds/jumpTo não contam
+    const marcarMovido = (e) => { if (e && e.originalEvent) this._usuarioMoveu = true; };
+    this._map.on('dragstart', marcarMovido);
+    this._map.on('zoomstart', marcarMovido);
+    this._map.on('moveend', () => this._atualizarFocaveis());
     this._timerEstilo = setTimeout(() => {
       this._timerEstilo = null;
-      if (!this._estiloCarregado) this._mostrarErro(this.MSG_FALHA);
+      if (!this._estiloCarregado) this._mostrarErro(this.MSG_FALHA, { tentarDeNovo: true });
     }, this.TIMEOUT_CARGA_MS);
     this._map.once('load', () => {
       this._estiloCarregado = true;
@@ -581,9 +648,34 @@ window.WaveMapaCelulas = {
     });
 
     this._observarTema();
-    this._atualizarPinos();
-    // Centro da cidade atual ainda desconhecido (ex.: trocou de cidade antes do mapa existir)
-    if (!centroConhecido) this._centralizarCidade(this._cidadeAtual);
+    this._atualizarPinos(); // já enquadra os pinos, se houver
+    // Sem pinos e centro da cidade ainda desconhecido (ex.: trocou de cidade antes do mapa existir)
+    if (!this._markers.size && !centroConhecido) this._centralizarCidade(this._cidadeAtual);
+  },
+
+  // Botão abaixo do zoom: volta a enquadrar todas as células depois que o usuário mexeu no mapa
+  _controleVerTodas() {
+    const self = this;
+    return {
+      onAdd() {
+        const grupo = document.createElement('div');
+        grupo.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mapa-celulas-ver-todas';
+        btn.title = 'Ver todas as células';
+        btn.setAttribute('aria-label', 'Ver todas as células');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+        btn.addEventListener('click', () => {
+          self._usuarioMoveu = false;
+          self._enquadrar(true);
+        });
+        grupo.appendChild(btn);
+        this._el = grupo;
+        return grupo;
+      },
+      onRemove() { if (this._el) this._el.remove(); }
+    };
   },
 
   _observarTema() {
@@ -616,10 +708,13 @@ window.WaveMapaCelulas = {
       grupos.get(k).push(x);
     });
     const desejados = new Map();
+    // No celular o espalhamento é maior: a área de toque do pino tem 44px
+    const celular = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    const raioBase = celular ? 20 : 12;
     grupos.forEach(lista => {
       lista.sort((a, b) => a.cel.id.localeCompare(b.cel.id));
       const n = lista.length;
-      const raio = n <= 1 ? 0 : (n <= 6 ? 12 : 18);
+      const raio = n <= 1 ? 0 : (n <= 6 ? raioBase : Math.round(raioBase * 1.5));
       lista.forEach((x, i) => {
         const ang = (2 * Math.PI * i) / Math.max(n, 1) - Math.PI / 2;
         const offset = n <= 1 ? [0, 0] : [Math.round(raio * Math.cos(ang)), Math.round(raio * Math.sin(ang))];
@@ -640,10 +735,17 @@ window.WaveMapaCelulas = {
         const el = document.createElement('div');
         el.className = 'mapa-celulas-pino';
         el.setAttribute('role', 'button');
+        el.setAttribute('aria-expanded', 'false');
         el.tabIndex = 0;
-        el.addEventListener('click', (ev) => { ev.stopPropagation(); this._abrirBalao(id); });
+        // Clique no pino aberto fecha o cartão; teclado leva o foco para o cartão
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (this._balaoId === id) this.fecharBalao();
+          else this._abrirBalao(id);
+        });
         el.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); this._abrirBalao(id); }
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); this._abrirBalao(id, { focar: true }); }
+          else if (ev.key === 'Escape' && this._balaoId) { ev.preventDefault(); this.fecharBalao({ focarPino: true }); }
         });
         let marker;
         try {
@@ -657,7 +759,7 @@ window.WaveMapaCelulas = {
       m.cel = d.cel;
       m.offset = d.offset;
       m.el.dataset.sexo = d.cel.sexo;
-      m.el.setAttribute('aria-label', `Célula de ${d.cel.liderNome}`);
+      m.el.setAttribute('aria-label', this._rotuloPino(d.cel));
       const assinatura = `${d.pos.lat}|${d.pos.lng}|${d.offset.join(',')}`;
       if (m.assinatura !== assinatura) {
         m.assinatura = assinatura;
@@ -671,66 +773,128 @@ window.WaveMapaCelulas = {
         if (this._balaoId === id) this.fecharBalao();
       }
     });
+
+    this._enquadrar(false);
+    this._atualizarFocaveis();
   },
 
-  _abrirBalao(id) {
-    const lib = window.maplibregl;
+  _rotuloPino(c) {
+    const quando = [c.diaSemana, c.horario].filter(Boolean).join(' às ');
+    return `Célula ${c.finalidade} de ${c.liderNome}${quando ? `, ${quando}` : ''}`;
+  },
+
+  /**
+   * Enquadra os pinos visíveis. Sem `forcar`, só age quando o conjunto de pinos mudou
+   * (cidade, filtro, pino novo) e o usuário ainda não arrastou/deu zoom — renders de
+   * fundo com os mesmos pinos não mexem no mapa. Devolve false se não há pinos.
+   */
+  _enquadrar(forcar) {
+    if (!this._map || !this._markers.size) return false;
+    const pts = [];
+    this._markers.forEach(m => { const ll = m.marker.getLngLat(); if (ll) pts.push(ll); });
+    if (!pts.length) return false;
+    const assinatura = `${this._cidadeAtual}|${pts.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).sort().join(';')}`;
+    if (!forcar && (this._usuarioMoveu || assinatura === this._assinaturaEnquadre)) return true;
+    this._assinaturaEnquadre = assinatura;
+    this._cidadeCentralizada = this._cidadeAtual;
+    if (typeof this._map.fitBounds !== 'function') return true;
+    const lats = pts.map(p => p.lat);
+    const lngs = pts.map(p => p.lng);
+    try {
+      this._map.fitBounds(
+        [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+        // folga maior à direita: os controles de zoom ficam ali
+        { padding: { top: 48, bottom: 48, left: 48, right: 72 }, maxZoom: this.ZOOM_MAX_ENQUADRE, duration: 0 }
+      );
+    } catch (e) {}
+    return true;
+  },
+
+  // Pinos fora da área visível saem da ordem de Tab (senão o foco some "dentro" do mapa)
+  _atualizarFocaveis() {
+    if (!this._map || typeof this._map.getBounds !== 'function') return;
+    let limites;
+    try { limites = this._map.getBounds(); } catch (e) { return; }
+    if (!limites || typeof limites.contains !== 'function') return;
+    this._markers.forEach(m => {
+      let dentro = true;
+      try { dentro = limites.contains(m.marker.getLngLat()); } catch (e) {}
+      m.el.tabIndex = dentro ? 0 : -1;
+    });
+  },
+
+  // Cartão da célula logo abaixo do slot do mapa: nunca é cortado pelo mapa nem fica atrás da bottom nav
+  _abrirBalao(id, opcoes = {}) {
     const m = this._markers.get(id);
-    if (!lib || !this._map || !m) return;
-    this.fecharBalao();
+    const area = this._wrap && this._wrap.parentNode;
+    if (!m || !area) return;
+    if (this._balaoId && this._balaoId !== id) this.fecharBalao();
+    if (this._detalheEl) this._detalheEl.remove();
     const c = m.cel;
 
     const box = document.createElement('div');
     box.className = 'mapa-celulas-balao';
+    box.setAttribute('role', 'region');
+    box.setAttribute('aria-label', `Célula de ${c.liderNome}`);
+
+    const topo = document.createElement('div');
+    topo.className = 'mapa-celulas-balao-topo';
+    const ponto = document.createElement('span');
+    ponto.className = 'mapa-celulas-ponto';
+    ponto.dataset.sexo = c.sexo;
+    ponto.setAttribute('aria-hidden', 'true');
     const nome = document.createElement('strong');
     nome.className = 'mapa-celulas-balao-nome';
     nome.textContent = c.liderNome;
-    box.appendChild(nome);
+    const fechar = document.createElement('button');
+    fechar.type = 'button';
+    fechar.className = 'mapa-celulas-balao-fechar';
+    fechar.setAttribute('aria-label', 'Fechar');
+    fechar.textContent = '×';
+    fechar.addEventListener('click', () => this.fecharBalao({ focarPino: true }));
+    topo.appendChild(ponto);
+    topo.appendChild(nome);
+    topo.appendChild(fechar);
+    box.appendChild(topo);
 
+    const dados = document.createElement('dl');
+    dados.className = 'mapa-celulas-balao-dados';
     const linha = (rotulo, valor) => {
       if (!valor) return;
-      const p = document.createElement('p');
-      p.className = 'mapa-celulas-balao-linha';
-      const r = document.createElement('span');
-      r.className = 'mapa-celulas-balao-rotulo';
-      r.textContent = rotulo;
-      const v = document.createElement('span');
-      v.textContent = valor;
-      p.appendChild(r);
-      p.appendChild(v);
-      box.appendChild(p);
+      const dt = document.createElement('dt');
+      dt.textContent = rotulo;
+      const dd = document.createElement('dd');
+      dd.textContent = valor;
+      dados.appendChild(dt);
+      dados.appendChild(dd);
     };
     linha('Tipo', c.finalidade);
-    linha('Dia', c.diaSemana);
-    linha('Horário', c.horario);
+    linha('Quando', [c.diaSemana, c.horario].filter(Boolean).join(' · '));
     linha('Faixa etária', c.faixa);
     linha('Bairro', c.bairro);
+    box.appendChild(dados);
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn btn-primary mapa-celulas-balao-btn';
     btn.textContent = 'Abrir ficha';
     btn.addEventListener('click', () => {
-      if (typeof this._aoAbrirFicha === 'function') this._aoAbrirFicha(c.liderId);
+      if (typeof this._aoAbrirFicha === 'function') this._aoAbrirFicha(c.liderId, c.celulaId);
     });
     box.appendChild(btn);
 
-    const [ox, oy] = m.offset || [0, 0];
-    const d = 14;
-    const offset = {
-      'center': [ox, oy], 'top': [ox, oy + d], 'bottom': [ox, oy - d], 'left': [ox + d, oy], 'right': [ox - d, oy],
-      'top-left': [ox + d, oy + d], 'top-right': [ox - d, oy + d], 'bottom-left': [ox + d, oy - d], 'bottom-right': [ox - d, oy - d]
-    };
-    try {
-      const popup = new lib.Popup({ offset, closeButton: true, maxWidth: '260px', className: 'mapa-celulas-popup' })
-        .setLngLat(m.marker.getLngLat())
-        .setDOMContent(box)
-        .addTo(this._map);
-      this._balao = popup;
-      this._balaoId = id;
-      popup.on('close', () => {
-        if (this._balao === popup) { this._balao = null; this._balaoId = null; }
-      });
-    } catch (e) {}
+    box.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') { ev.preventDefault(); this.fecharBalao({ focarPino: true }); }
+    });
+
+    area.insertAdjacentElement('afterend', box);
+    this._detalheEl = box;
+    this._balaoId = id;
+    m.el.classList.add('ativo');
+    m.el.setAttribute('aria-expanded', 'true');
+    if (opcoes.focar) { try { btn.focus({ preventScroll: true }); } catch (e) {} }
+    if (opcoes.rolar !== false) {
+      try { box.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+    }
   }
 };

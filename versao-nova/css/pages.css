@@ -525,13 +525,23 @@
   color: var(--white);
 }
 
+/* Célula aberta a partir do mapa do painel: destaque breve na ficha */
+.ficha-celula-destaque {
+  box-shadow: 0 0 0 2px var(--celula-masc);
+  transition: box-shadow 400ms var(--ease-out);
+}
+
+.card-stat-box:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
 /* ── Bloco "Próximos aniversariantes" (painel) ── */
 .aniv-bloco {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
-  margin-bottom: var(--space-2xl);
 }
 
 .aniv-header {
@@ -725,7 +735,6 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
-  margin-bottom: var(--space-2xl);
 }
 
 .mapa-celulas-header {
@@ -748,8 +757,10 @@
   font-size: var(--fs-label);
 }
 
+/* padding: o overflow-x do .filter-chips cortava o contorno de foco dos chips */
 .mapa-celulas-filtro {
-  margin-bottom: var(--space-sm);
+  padding: 4px;
+  margin: -4px -4px var(--space-sm);
 }
 .mapa-celulas-filtro .chip {
   font-family: inherit;
@@ -793,7 +804,7 @@
 
 .mapa-celulas-contador {
   margin-left: auto;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 .mapa-celulas-contador.vazio { visibility: hidden; }
 
@@ -857,65 +868,130 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   cursor: pointer;
 }
+/* Área de toque de 44px sem aumentar o desenho do pino */
+.mapa-celulas-pino::after {
+  content: '';
+  position: absolute;
+  inset: -13px;
+  border-radius: var(--radius-full);
+}
+/* Foco visível sobre o mapa claro e o escuro (anel duplo branco/preto) */
 .mapa-celulas-pino:focus-visible {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #000000;
 }
 
-/* Balão (popup do MapLibre) nas cores do tema */
-.mapa-celulas-popup .maplibregl-popup-content {
+/* Pino selecionado: anel para casar com o cartão aberto abaixo do mapa */
+.mapa-celulas-pino.ativo {
+  box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--text-primary);
+}
+
+/* Controles do MapLibre nas cores do tema (o padrão é branco também no escuro) */
+.mapa-celulas-area .maplibregl-ctrl-group {
   background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-sm);
+}
+.mapa-celulas-area .maplibregl-ctrl-group button + button { border-top-color: var(--border-subtle); }
+.mapa-celulas-ver-todas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-primary);
+}
+/* Seletores de 3 classes: o CSS do MapLibre (carregado depois) usa 2 */
+.mapa-celulas-area .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.mapa-celulas-area .maplibregl-ctrl-attrib.maplibregl-compact,
+.mapa-celulas-area .maplibregl-ctrl-attrib.maplibregl-compact-show {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+}
+.mapa-celulas-area .maplibregl-ctrl-attrib a { color: inherit; }
+:root:not([data-theme="light"]) .mapa-celulas-area .maplibregl-ctrl-icon,
+:root:not([data-theme="light"]) .mapa-celulas-area .maplibregl-ctrl-attrib-button { filter: invert(1); }
+
+.mapa-celulas-erro { flex-direction: column; gap: var(--space-md); }
+.mapa-celulas-erro p { margin: 0; max-width: 360px; }
+/* fundo/borda próprios: no claro o btn-secondary tinha a mesma cor do slot de erro */
+.mapa-celulas-erro .mapa-celulas-erro-btn {
+  min-height: 44px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+}
+
+/* Mapa indisponível: filtro e seletor de cidade não fariam nada */
+.mapa-celulas-indisponivel .mapa-celulas-filtro .chip,
+.mapa-celulas-indisponivel .mapa-celulas-cidade {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Cartão da célula selecionada (abaixo do mapa) */
+.mapa-celulas-balao {
+  max-width: 420px;
+  margin-top: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-card);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  padding: 12px 14px;
-  /* o MapLibre fixa Helvetica no container do mapa */
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  box-shadow: var(--shadow-sm);
+  scroll-margin-bottom: var(--space-xl);
 }
-.mapa-celulas-popup .maplibregl-popup-close-button {
-  color: var(--text-secondary);
-  font-size: 18px;
-  width: 28px;
-  height: 28px;
-}
-.mapa-celulas-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
-.mapa-celulas-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
-.mapa-celulas-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--bg-card); }
-.mapa-celulas-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip,
-.mapa-celulas-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
-.mapa-celulas-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--bg-card); }
-.mapa-celulas-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--bg-card); }
-.mapa-celulas-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--bg-card); }
-
-.mapa-celulas-balao {
+.mapa-celulas-balao-topo {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 180px;
-  padding-right: 18px;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
 }
 .mapa-celulas-balao-nome {
+  flex: 1;
+  min-width: 0;
   font-size: var(--fs-body);
   font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 2px;
 }
-.mapa-celulas-balao-linha {
+.mapa-celulas-balao-fechar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin: -8px -10px -8px 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mapa-celulas-balao-fechar:hover { background: var(--bg-card); color: var(--text-primary); }
+.mapa-celulas-balao-fechar:focus-visible,
+.mapa-celulas-balao-btn:focus-visible {
+  outline: 2px solid var(--celula-masc);
+  outline-offset: 2px;
+}
+.mapa-celulas-balao-dados {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px var(--space-md);
   margin: 0;
-  display: flex;
-  gap: 6px;
   font-size: var(--fs-label);
-  color: var(--text-primary);
 }
-.mapa-celulas-balao-rotulo {
+.mapa-celulas-balao-dados dt {
   color: var(--text-secondary);
   font-weight: 600;
+  white-space: nowrap;
+}
+.mapa-celulas-balao-dados dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
 }
 .mapa-celulas-balao-btn {
-  margin-top: 8px;
-  min-height: 36px;
-  padding: 8px 12px;
+  margin-top: var(--space-md);
+  min-height: 40px;
+  padding: 8px 16px;
   font-size: var(--fs-label);
 }
 
@@ -923,6 +999,32 @@
   .mapa-celulas-bloco { padding: var(--space-lg) var(--space-md); border-radius: 12px; }
   .mapa-celulas-titulo { font-size: var(--fs-body); }
   .mapa-celulas-area { height: 280px; }
+
+  /* Seletor de cidade em linha própria: o título não quebra */
+  .mapa-celulas-header { flex-wrap: wrap; }
+  .mapa-celulas-cidade { order: 3; flex: 1 1 100%; max-width: none; }
+
+  /* Alvos de toque de 44px */
+  .mapa-celulas-filtro .chip,
+  .mapa-celulas-cidade { min-height: 44px; }
+  .mapa-celulas-area .maplibregl-ctrl-group button { width: 40px; height: 40px; }
+  .mapa-celulas-balao { max-width: none; }
+  /* botão "i" dos créditos com 44px (o do MapLibre tem 24px) */
+  /* recolhida, a caixa tem a largura do padding-right (onde fica o botão) */
+  .mapa-celulas-area .maplibregl-ctrl-attrib.maplibregl-compact { min-height: 44px; padding-right: 44px; }
+  .mapa-celulas-area .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
+    width: 44px;
+    height: 44px;
+    background-color: transparent;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .mapa-celulas-balao-fechar { width: 44px; height: 44px; }
+  /* seletor duplo: o `.btn { min-height: 42px }` do fim deste arquivo viria depois */
+  .mapa-celulas-balao .mapa-celulas-balao-btn { width: 100%; min-height: 44px; }
+  .mapa-celulas-contador { flex-basis: 100%; margin-left: 0; }
+  /* o cartão rola para cima da bottom nav fixa */
+  .mapa-celulas-balao { scroll-margin-bottom: calc(var(--nav-height) + var(--space-lg)); }
 }
 
 /* ══════════════════════════════════════

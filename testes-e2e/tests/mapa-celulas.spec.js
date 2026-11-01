@@ -13,7 +13,6 @@ const G = require('../../versao-nova/js/geocodificacao.js');
 const TABELA = 'geocodificacao_enderecos';
 const LIDERES = ['paulo', 'carlos', 'sergio', 'ana', 'juliana'];
 const ESPERA_GEO = { timeout: 15000 };
-const CENTRO = `${G.CENTRO_MANDAGUARI.lat},${G.CENTRO_MANDAGUARI.lng}`;
 
 const pinos = page => page.locator('.mapa-celulas-area .mapa-celulas-pino');
 const contador = page => page.locator('#mapa-celulas-contador');
@@ -92,7 +91,7 @@ async function conferirEscritaIsolada({ mock }) {
 
 test.describe('Mapa das células — I/O Matrix', () => {
   test.afterEach(conferirEscritaIsolada);
-  test('Normal: 3 células (2 masc., 1 fem.) com 3 pinos nas cores da legenda, centrado em Mandaguari', async ({ page, mock }) => {
+  test('Normal: 3 células (2 masc., 1 fem.) com 3 pinos nas cores da legenda, mapa enquadrando todas', async ({ page, mock }) => {
     definirCelulas(mock, { paulo: END.a, carlos: END.b, ana: END.c });
     gravarNaTabela(mock, END.a, -23.541, -51.672);
     gravarNaTabela(mock, END.b, -23.552, -51.665);
@@ -102,7 +101,8 @@ test.describe('Mapa das células — I/O Matrix', () => {
     await expect(pinos(page)).toHaveCount(3);
     await expect(pinos(page).and(page.locator('[data-sexo="MASCULINO"]'))).toHaveCount(2);
     await expect(pinos(page).and(page.locator('[data-sexo="FEMININO"]'))).toHaveCount(1);
-    await expect(canvas(page)).toHaveAttribute('data-centro', CENTRO);
+    // Nenhuma célula localizada fica fora da tela: o mapa enquadra a caixa dos pinos
+    await expect(canvas(page)).toHaveAttribute('data-enquadre', '-23.552,-51.68,-23.541,-51.665');
 
     const cor = sel => page.locator(sel).first().evaluate(el => getComputedStyle(el).backgroundColor);
     expect(await cor('.mapa-celulas-pino[data-sexo="MASCULINO"]')).toBe(await cor('.mapa-celulas-ponto[data-sexo="MASCULINO"]'));
@@ -214,7 +214,8 @@ test.describe('Mapa das células — I/O Matrix', () => {
 
     await seletor.selectOption('jandaia do sul');
     await expect(pinos(page)).toHaveCount(2, ESPERA_GEO);
-    await expect(canvas(page)).toHaveAttribute('data-centro', '-23.6031,-51.6434', ESPERA_GEO);
+    // As duas grafias viram uma cidade só, enquadrada pelos pinos dela
+    await expect(canvas(page)).toHaveAttribute('data-enquadre', '-23.6,-51.64,-23.6,-51.64', ESPERA_GEO);
   });
 
   test('Endereço mudou: chave nova → geocodifica e grava de novo, pino muda de lugar', async ({ page, mock }) => {
@@ -352,6 +353,117 @@ test.describe('Mapa das células — I/O Matrix', () => {
     await expect(balao.getByRole('button', { name: 'Abrir ficha' })).toBeVisible();
   });
 
+  test('Cartão da célula: abaixo do mapa, fecha com ×, com Esc e tocando de novo no pino; foco volta ao pino', async ({ page, mock }) => {
+    definirCelulas(mock, { ana: END.b });
+    gravarNaTabela(mock, END.b, -23.55, -51.66);
+    await abrirPainel(page);
+    const cartao = page.locator('.mapa-celulas-balao');
+
+    await pinos(page).first().click();
+    await expect(cartao).toBeVisible();
+    // Fora do slot do mapa (que corta o conteúdo): logo abaixo dele, inteiro
+    expect(await page.locator('.mapa-celulas-area .mapa-celulas-balao').count()).toBe(0);
+    // medido de uma vez só (o cartão rola suavemente para a vista ao abrir)
+    const abaixo = await page.evaluate(() => {
+      const a = document.querySelector('.mapa-celulas-area').getBoundingClientRect();
+      const c = document.querySelector('.mapa-celulas-balao').getBoundingClientRect();
+      return c.top >= a.bottom;
+    });
+    expect(abaixo).toBe(true);
+    await expect(pinos(page).first()).toHaveClass(/ativo/);
+    await expect(pinos(page).first()).toHaveAttribute('aria-expanded', 'true');
+
+    await cartao.getByRole('button', { name: 'Fechar' }).click();
+    await expect(cartao).toHaveCount(0);
+    await expect(pinos(page).first()).toBeFocused();
+    await expect(pinos(page).first()).not.toHaveClass(/ativo/);
+
+    await pinos(page).first().click();
+    await cartao.getByRole('button', { name: 'Abrir ficha' }).focus();
+    await page.keyboard.press('Escape');
+    await expect(cartao).toHaveCount(0);
+    await expect(pinos(page).first()).toBeFocused();
+
+    await pinos(page).first().click();
+    await expect(cartao).toBeVisible();
+    await pinos(page).first().click();
+    await expect(cartao).toHaveCount(0);
+  });
+
+  test('Teclado: Enter no pino abre o cartão com foco em "Abrir ficha"; rótulo do pino diz tipo, líder e quando', async ({ page, mock }) => {
+    definirCelulas(mock, { ana: END.b });
+    gravarNaTabela(mock, END.b, -23.55, -51.66);
+    await abrirPainel(page);
+    await expect(pinos(page).first()).toHaveAttribute('aria-label', `Célula Evangelística de ${NOMES.ana}, Quarta às 20:00`);
+    await pinos(page).first().focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.mapa-celulas-balao').getByRole('button', { name: 'Abrir ficha' })).toBeFocused();
+  });
+
+  test('Enquadre: depois que o usuário mexe no mapa, trocar o filtro não reposiciona', async ({ page, mock }) => {
+    definirCelulas(mock, { paulo: { ...END.a, lideranca: 1 }, ana: END.b });
+    gravarNaTabela(mock, END.a, -23.54, -51.67);
+    gravarNaTabela(mock, END.b, -23.55, -51.66);
+    await abrirPainel(page);
+    await expect(pinos(page)).toHaveCount(3);
+    const chip = nome => page.locator('.mapa-celulas-filtro').getByRole('button', { name: nome, exact: true });
+
+    // Sem gesto do usuário, o filtro reenquadra os pinos que sobraram
+    await chip('Liderança').click();
+    await expect(canvas(page)).toHaveAttribute('data-enquadre', '-23.54,-51.67,-23.54,-51.67');
+
+    await page.evaluate(() => {
+      WaveMapaCelulas._map.jumpTo({ center: [-51.60, -23.50], zoom: 12 });
+      WaveMapaCelulas._map.fire('dragstart', { originalEvent: {} }); // gesto real (não programático)
+    });
+    await chip('Todas').click();
+    await expect(pinos(page)).toHaveCount(3);
+    await expect(canvas(page)).toHaveAttribute('data-centro', '-23.5,-51.6');
+  });
+
+  test('Celular (375px): cartão inteiro acima da bottom nav e alvos de toque com 44px', async ({ page, mock }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    definirCelulas(mock, { paulo: END.a, ana: END.b, juliana: { ...END.c, cidade: 'Jandaia do Sul' } });
+    gravarNaTabela(mock, END.a, -23.54, -51.67);
+    gravarNaTabela(mock, END.b, -23.55, -51.66);
+    gravarNaTabela(mock, { ...END.c, cidade: 'Jandaia do Sul' }, -23.60, -51.64);
+    await abrirPainel(page);
+
+    for (const sel of ['.mapa-celulas-filtro .chip', '#mapa-celulas-cidade']) {
+      const alturas = await page.locator(sel).evaluateAll(els => els.map(e => e.getBoundingClientRect().height));
+      for (const h of alturas) expect(h, `${sel} com 44px`).toBeGreaterThanOrEqual(44);
+    }
+    const toque = await pinos(page).first().evaluate(el => {
+      const a = getComputedStyle(el, '::after');
+      return el.getBoundingClientRect().width - 2 * parseFloat(a.left);
+    });
+    expect(toque).toBeGreaterThanOrEqual(44);
+    // Título numa linha só (o seletor de cidade vai para a linha de baixo)
+    const titulo = await page.locator('.mapa-celulas-titulo').boundingBox();
+    expect(titulo.height).toBeLessThan(32);
+
+    await page.locator('.mapa-celulas-area').scrollIntoViewIfNeeded();
+    await pinos(page).first().click();
+    const btn = page.locator('.mapa-celulas-balao').getByRole('button', { name: 'Abrir ficha' });
+    await expect(btn).toBeVisible();
+    await expect.poll(async () => {
+      const b = await btn.boundingBox();
+      const nav = await page.locator('.bottom-nav:visible').first().boundingBox().catch(() => null);
+      return b.y + b.height <= (nav ? nav.y : 812);
+    }).toBe(true);
+    expect((await btn.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Tema claro: chip ativo legível (não preto sobre preto)', async ({ page, mock }) => {
+    definirCelulas(mock, { paulo: END.a });
+    await abrirPainel(page);
+    await page.evaluate(() => WaveTheme.setTheme('light'));
+    // o chip tem transition: espera a cor assentar
+    await expect.poll(() => page.locator('.mapa-celulas-filtro .chip.active').evaluate(el => ({
+      texto: getComputedStyle(el).color, fundo: getComputedStyle(el).backgroundColor
+    }))).toEqual({ texto: 'rgb(255, 255, 255)', fundo: 'rgb(24, 24, 27)' });
+  });
+
   test('Balão não interpreta HTML vindo do cadastro', async ({ page, mock }) => {
     definirCelulas(mock, { ana: { ...END.b, bairro: '<img src=x onerror="window.__xss=1">' } });
     gravarNaTabela(mock, { ...END.b, bairro: '<img src=x onerror="window.__xss=1">' }, -23.55, -51.66);
@@ -374,6 +486,21 @@ test.describe('Mapa das células — I/O Matrix', () => {
     await expect(ficha.locator('.sheet-title')).toHaveText('Ficha da Célula');
     await expect(ficha.locator('.ficha-hero-name')).toContainText(NOMES.ana);
     await expect(page.locator('.mapa-celulas-balao')).toHaveCount(0);
+  });
+
+  test('Abrir ficha: a ficha rola até a célula clicada no mapa e a destaca', async ({ page, mock }) => {
+    // paulo: cel-paulo-1 (Evangelística) e cel-paulo-2 (Liderança) no mesmo endereço
+    definirCelulas(mock, { paulo: { ...END.a, lideranca: 1 } });
+    gravarNaTabela(mock, END.a, -23.54, -51.67);
+    await abrirPainel(page);
+    await page.locator('.mapa-celulas-filtro').getByRole('button', { name: 'Liderança', exact: true }).click();
+    await pinos(page).first().click();
+    await page.locator('.mapa-celulas-balao').getByRole('button', { name: 'Abrir ficha' }).click();
+    await expect(page).toHaveURL(/#admin-lideres$/);
+    await expect(page.locator('.modal-overlay.open [data-celula-id="cel-paulo-2"]')).toHaveClass(/ficha-celula-destaque/);
+    await expect(page.locator('.modal-overlay.open [data-celula-id="cel-paulo-1"]')).not.toHaveClass(/ficha-celula-destaque/);
+    // destaque é breve
+    await expect(page.locator('.ficha-celula-destaque')).toHaveCount(0, { timeout: 5000 });
   });
 
   test('Realtime: mapa não é recriado, não perde centro/zoom e a rolagem não pula', async ({ page, mock }) => {
@@ -438,43 +565,56 @@ test.describe('Mapa das células — I/O Matrix', () => {
     await expect(page.locator('#mapa-celulas-cidade')).toHaveCount(0);
   });
 
-  test('Várias cidades: Mandaguari selecionada; trocar recentraliza e mostra só as da outra', async ({ page, mock }) => {
+  test('Várias cidades: Mandaguari selecionada; trocar enquadra e mostra só as da outra', async ({ page, mock }) => {
     const outra = { rua: 'Rua Distante Fictícia', numero: '5', bairro: 'Centro', cidade: 'Apucarana' };
     definirCelulas(mock, { paulo: END.a, ana: END.b, carlos: outra });
     gravarNaTabela(mock, END.a, -23.54, -51.67);
     gravarNaTabela(mock, END.b, -23.55, -51.66);
     gravarNaTabela(mock, outra, -23.551, -51.461);
-    mock.nominatim = (p) => p.get('city') === 'Apucarana' && !p.get('street')
-      ? [{ lat: '-23.5508', lon: '-51.4608', addresstype: 'city', address: { city: 'Apucarana' } }]
-      : [];
     await abrirPainel(page);
     const seletor = page.locator('#mapa-celulas-cidade');
     await expect(seletor.locator('option')).toHaveText(['Mandaguari', 'Apucarana']);
     await expect(seletor).toHaveValue('mandaguari');
     await expect(pinos(page)).toHaveCount(2);
+    await expect(canvas(page)).toHaveAttribute('data-enquadre', '-23.55,-51.67,-23.54,-51.66');
 
     await seletor.selectOption('apucarana');
     await expect(pinos(page)).toHaveCount(1);
     await expect(pinos(page)).toHaveAttribute('data-lat', '-23.551');
-    await expect(canvas(page)).toHaveAttribute('data-centro', '-23.5508,-51.4608', ESPERA_GEO);
-    await expect.poll(() => mock.escritas(TABELA, 'POST').length).toBe(1);
-    expect(mock.escritas(TABELA, 'POST')[0].body[0]).toMatchObject({ endereco_chave: 'v1|cidade|apucarana', encontrado: true });
+    await expect(canvas(page)).toHaveAttribute('data-enquadre', '-23.551,-51.461,-23.551,-51.461');
+    // Com pino na cidade, o centro dela nem precisa ser buscado
+    expect(mock.consultasNominatim).toEqual([]);
 
     await seletor.selectOption('mandaguari');
     await expect(pinos(page)).toHaveCount(2);
-    await expect(canvas(page)).toHaveAttribute('data-centro', CENTRO);
+    await expect(canvas(page)).toHaveAttribute('data-enquadre', '-23.55,-51.67,-23.54,-51.66');
   });
 
-  test('Várias cidades: cidade não encontrada mantém o centro anterior e informa', async ({ page, mock }) => {
+  test('Várias cidades: cidade sem nenhuma célula localizada vai para o centro dela e grava o centro', async ({ page, mock }) => {
+    const outra = { rua: 'Rua Distante Fictícia', numero: '5', bairro: 'Centro', cidade: 'Apucarana' };
+    definirCelulas(mock, { paulo: END.a, carlos: outra });
+    gravarNaTabela(mock, END.a, -23.54, -51.67);
+    mock.nominatim = (p) => p.get('city') === 'Apucarana' && !p.get('street')
+      ? [{ lat: '-23.5508', lon: '-51.4608', addresstype: 'city', category: 'boundary', address: { city: 'Apucarana' } }]
+      : [];
+    await abrirPainel(page);
+    await page.locator('#mapa-celulas-cidade').selectOption('apucarana');
+    await expect(canvas(page)).toHaveAttribute('data-centro', '-23.5508,-51.4608', ESPERA_GEO);
+    await expect(contador(page)).toHaveText('1 célula sem localização', ESPERA_GEO);
+    await expect.poll(() => mock.escritas(TABELA, 'POST').some(w => w.body[0].endereco_chave === 'v1|cidade|apucarana')).toBe(true);
+  });
+
+  test('Várias cidades: cidade não encontrada mantém a posição anterior e informa', async ({ page, mock }) => {
     const outra = { rua: 'Rua Distante Fictícia', numero: '5', bairro: 'Centro', cidade: 'Cidade Inexistente' };
     definirCelulas(mock, { paulo: END.a, carlos: outra });
     gravarNaTabela(mock, END.a, -23.54, -51.67);
-    gravarNaTabela(mock, outra, -23.70, -51.80);
+    mock.nominatim = () => [];
     await abrirPainel(page);
+    const antes = await canvas(page).getAttribute('data-centro');
     await page.locator('#mapa-celulas-cidade').selectOption('cidade inexistente');
     await expect(page.locator('.mapa-celulas-aviso')).toContainText('Não foi possível localizar Cidade Inexistente', ESPERA_GEO);
-    await expect(canvas(page)).toHaveAttribute('data-centro', CENTRO);
-    await expect(pinos(page)).toHaveCount(1);
+    await expect(canvas(page)).toHaveAttribute('data-centro', antes);
+    await expect(pinos(page)).toHaveCount(0);
   });
 
   test('Grafia: "Mandaguari", "mandaguari " e "Mandaguarí" são uma cidade só', async ({ page, mock }) => {
@@ -500,6 +640,15 @@ test.describe('Mapa das células — falhas de carga', () => {
     await expect(page.locator('.mapa-celulas-erro')).toContainText('Não foi possível carregar o mapa');
     await expect(page.locator('.aniv-bloco')).toBeVisible();
     await expect(page.locator('.cards-stat-grid .card-stat-box')).toHaveCount(3);
+    // Filtro sem efeito fica desabilitado enquanto o mapa está indisponível
+    await expect(page.locator('.mapa-celulas-filtro .chip').first()).toBeDisabled();
+
+    // "Tentar de novo" com a lib disponível: o mapa aparece e os controles voltam
+    await page.addScriptTag({ path: path.join(__dirname, '..', 'support', 'maplibre-stub.js') });
+    await page.locator('.mapa-celulas-erro').getByRole('button', { name: 'Tentar de novo' }).click();
+    await expect(page.locator('.mapa-celulas-erro')).toBeHidden();
+    await expect(page.locator('.mapa-celulas-filtro .chip').first()).toBeEnabled();
+    expect(await page.evaluate(() => window.__mapasCriados)).toBe(1);
   });
 
   test('Arquivo do CDN adulterado (não casa com o SRI) não executa: mensagem amigável', async ({ page, mock }) => {
