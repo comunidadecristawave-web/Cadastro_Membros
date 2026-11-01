@@ -2,6 +2,8 @@
    - `mock`: FakeSupabase novo por teste, com massa fictícia (support/seed.js).
    - `context`: instala a GUARDA DE REDE (toda requisição passa por aqui) + sessão opcional.
    - `page`: coleta pageerror/console.error e falha o teste se houver violação de rede. */
+const fs = require('fs');
+const path = require('path');
 const base = require('@playwright/test');
 const { FakeSupabase, MOCK_HOST, MOCK_URL, MOCK_KEY } = require('./fake-supabase');
 const { buildSeed, sessaoAdmin } = require('./seed');
@@ -70,16 +72,56 @@ async function instalarGuarda(context, mock) {
   });
 }
 
+const STUB_MAPLIBRE = fs.readFileSync(path.join(__dirname, 'maplibre-stub.js'), 'utf8');
+const CORS_LIVRE = { 'access-control-allow-origin': '*' };
+
+/* Stubs padrão do mapa do painel — registrados DEPOIS da guarda (a última rota vence),
+   então MapLibre real, tiles e Nominatim nunca saem para a rede e a allowlist fica igual.
+   - maplibreStub=true: `window.maplibregl` (stub) já existe antes do app → o app não baixa a lib.
+   - JS/CSS do MapLibre no jsdelivr → stub/CSS vazio (não casa com o SRI: simula CDN adulterada).
+   - tiles.openfreemap.org → 204.
+   - nominatim.openstreetmap.org → mock.nominatim(searchParams) (padrão: pendente, nunca responde — sem escrita e sem erro no console). */
+async function instalarStubsMapa(context, mock, { maplibreStub }) {
+  if (maplibreStub) await context.addInitScript({ content: STUB_MAPLIBRE });
+
+  await context.route(/^https:\/\/cdn\.jsdelivr\.net\/npm\/maplibre-gl@/, (route) => {
+    const url = route.request().url();
+    mock.requisicoesMapa.push(url);
+    if (url.endsWith('.css')) return route.fulfill({ status: 200, headers: CORS_LIVRE, contentType: 'text/css', body: '' });
+    return route.fulfill({ status: 200, headers: CORS_LIVRE, contentType: 'text/javascript', body: STUB_MAPLIBRE });
+  });
+
+  await context.route(/^https:\/\/tiles\.openfreemap\.org\//, (route) => {
+    mock.requisicoesMapa.push(route.request().url());
+    return route.fulfill({ status: 204, headers: CORS_LIVRE, body: '' });
+  });
+
+  await context.route(/^https:\/\/nominatim\.openstreetmap\.org\//, async (route) => {
+    const url = new URL(route.request().url());
+    mock.consultasNominatim.push(url.toString());
+    let r;
+    try { r = await mock.nominatim(url.searchParams); } catch (e) { r = { status: 500, body: { error: 'falha no stub' } }; }
+    if (r && r.pendente) return; // nunca responde (o app desiste no próprio timeout, sem gravar)
+    if (r && r.abort) return route.abort('failed');
+    if (r && !Array.isArray(r) && r.status) {
+      return route.fulfill({ status: r.status, headers: CORS_LIVRE, contentType: 'application/json', body: JSON.stringify(r.body ?? {}) });
+    }
+    return route.fulfill({ status: 200, headers: CORS_LIVRE, contentType: 'application/json', body: JSON.stringify(r || []) });
+  });
+}
+
 const test = base.test.extend({
   sessaoAdmin: [true, { option: true }],
+  maplibreStub: [true, { option: true }],
 
   mock: async ({}, use) => {
     const mock = new FakeSupabase(buildSeed());
     await use(mock);
   },
 
-  context: async ({ context, mock, sessaoAdmin: comSessao }, use) => {
+  context: async ({ context, mock, sessaoAdmin: comSessao, maplibreStub }, use) => {
     await instalarGuarda(context, mock);
+    await instalarStubsMapa(context, mock, { maplibreStub });
     if (comSessao) {
       await context.addInitScript((sessao) => {
         try { window.sessionStorage.setItem('wave_auth_session', JSON.stringify(sessao)); } catch (e) {}

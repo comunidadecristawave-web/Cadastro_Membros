@@ -203,6 +203,7 @@ window.WaveAuth = {
     if (window.WaveApp && WaveApp.pararRealtimeMembros) {
       WaveApp.pararRealtimeMembros();
     }
+    if (window.WaveMapaCelulas) WaveMapaCelulas.destruir();
     this._sessionUser = null;
     sessionStorage.removeItem('wave_auth_session');
     localStorage.removeItem('wave_auth_session');

@@ -39,6 +39,11 @@ ver a falha real de cada um.
   - Qualquer host fora da allowlist (`localhost`, `127.0.0.1`, `supabase.mock.test`,
     `cdn.jsdelivr.net`, `unpkg.com`, `fonts.googleapis.com`, `fonts.gstatic.com`) — e qualquer host
     com `supabase.co` — é **abortado e faz o teste falhar**. `tests/guarda-rede.spec.js` prova isso.
+- Mapa do painel: o fixture registra stubs **depois** da guarda (a última rota vence), sem abrir a
+  allowlist: `window.maplibregl` vem de `support/maplibre-stub.js` (sem WebGL; desligue com
+  `test.use({ maplibreStub: false })`), o JS/CSS do MapLibre no jsdelivr devolve o stub/CSS vazio
+  (não casa com o SRI), tiles do OpenFreeMap → 204 e o Nominatim responde `mock.nominatim(searchParams)`
+  (padrão: requisição pendente, sem resposta — painel com o seed padrão não grava nada nem suja o console; URLs em `mock.consultasNominatim`). O fake faz upsert (`Prefer: resolution=merge-duplicates`).
 - As CDNs (supabase-js, lucide) carregam da internet; sem rede, a suíte não roda.
 
 ## Dados
@@ -66,4 +71,5 @@ Nunca coloque dados reais aqui.
 | `tests/guarda-rede.spec.js` | Autoteste da guarda de rede |
 | `tests/realtime-estavel.spec.js` | Sync só leitura, lote do Realtime, reconexão, sem animação em render de fundo |
 | `tests/aniversariantes-bloco.spec.js` | Bloco "Próximos aniversariantes" do painel (30 dias, até 8, "Ver todos", 29/02, idade a completar) com relógio fixo |
+| `tests/mapa-celulas.spec.js` | Mapa das células do painel (I/O Matrix do plano, critérios de aceite) e o script de pré-carga contra servidor falso local |
 | `tests/achados-preexistentes.spec.js` | Bugs reais fora do escopo, marcados `test.fail()` |

@@ -58,6 +58,10 @@
   --whatsapp-muted: rgba(37, 211, 102, 0.10);
   --whatsapp-border: rgba(37, 211, 102, 0.22);
 
+  /* ── Mapa das células: cor do pino pelo sexo do líder ── */
+  --celula-masc: #60A5FA;
+  --celula-fem: #F472B6;
+
   /* ── Spacing ── */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -128,6 +132,10 @@
   --border-subtle: #E4E4E7;
   --border-medium: #D4D4D8;
   --border-focus: #18181B;
+
+  /* ── Mapa das células ── */
+  --celula-masc: #2563EB;
+  --celula-fem: #DB2777;
 
   /* ── Shadows ── */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);

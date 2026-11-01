@@ -801,6 +801,17 @@ WavePages['admin-lideres'] = {
     }
   },
 
+  // Deixa a ficha do líder pronta para abrir no próximo render de Células, sem renderizar
+  // agora (usado pelo "Abrir ficha" do mapa do painel antes do navigate).
+  prepararFicha(liderId) {
+    const l = WaveData.getAllLideresAtivos().find(item => item.id === liderId);
+    if (!l) return false;
+    this._liderSelecionado = l;
+    this._editandoLider = false;
+    this._origemFicha = null;
+    return true;
+  },
+
   fecharFicha() {
     this._liderSelecionado = null;
     this._editandoLider = false;

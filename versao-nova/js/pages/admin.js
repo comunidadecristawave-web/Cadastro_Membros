@@ -89,6 +89,9 @@ WavePages.admin = {
       <!-- Bloco: Próximos aniversariantes (até 8; "Ver todos" abre o modal) -->
       ${this._renderBlocoAniversariantes(proximos)}
 
+      <!-- Bloco: Mapa das células (o mapa em si é reanexado no onMount e sobrevive aos renders de fundo) -->
+      ${this._renderBlocoMapa()}
+
       <!-- Modal: Próximos aniversariantes com WhatsApp e Modelos de Mensagem -->
       <style>
         @media (max-width: 480px) {
@@ -273,6 +276,60 @@ WavePages.admin = {
         `}
       </section>
     `;
+  },
+
+  // Bloco do mapa: título, legenda, contador e o slot com altura reservada igual à do
+  // mapa (a rolagem é restaurada antes do onMount — sem a altura, ela pularia no Realtime).
+  _renderBlocoMapa() {
+    if (!window.WaveMapaCelulas) return '';
+    const esc = (s) => WaveApp.escapeHTML(s || '');
+    const estado = WaveMapaCelulas.estadoBloco();
+    const n = estado.semLocalizacao;
+    const contador = n === 0 ? '' : (n === 1 ? '1 célula sem localização' : `${n} células sem localização`);
+    return `
+      <section class="mapa-celulas-bloco animate-in" aria-labelledby="mapa-celulas-titulo">
+        <div class="mapa-celulas-header">
+          <h2 id="mapa-celulas-titulo" class="aniv-titulo mapa-celulas-titulo">
+            <i data-lucide="map-pin" aria-hidden="true"></i> Mapa das células
+          </h2>
+          ${estado.cidades.length > 1 ? `
+            <select id="mapa-celulas-cidade" class="input-field mapa-celulas-cidade" aria-label="Cidade do mapa"
+                    onchange="WaveMapaCelulas.trocarCidade(this.value)">
+              ${estado.cidades.map(c => `<option value="${esc(c.valor)}" ${c.valor === estado.cidadeAtual ? 'selected' : ''}>${esc(c.rotulo)}</option>`).join('')}
+            </select>
+          ` : ''}
+        </div>
+        <div class="filter-chips mapa-celulas-filtro" role="group" aria-label="Tipo de célula no mapa">
+          ${[['todas', 'Todas'], ['Evangelística', 'Evangelísticas'], ['Liderança', 'Liderança']].map(([valor, rotulo]) => {
+            const ativo = estado.finalidadeAtual === valor;
+            return `<button type="button" class="chip ${ativo ? 'active' : ''}" data-finalidade="${valor}" aria-pressed="${ativo}"
+                            onclick="WaveMapaCelulas.trocarFinalidade(this.dataset.finalidade)">${rotulo}</button>`;
+          }).join('')}
+        </div>
+        <div class="mapa-celulas-legenda">
+          <span class="mapa-celulas-legenda-item"><span class="mapa-celulas-ponto" data-sexo="MASCULINO" aria-hidden="true"></span>Masculina</span>
+          <span class="mapa-celulas-legenda-item"><span class="mapa-celulas-ponto" data-sexo="FEMININO" aria-hidden="true"></span>Feminina</span>
+          <span id="mapa-celulas-contador" class="mapa-celulas-contador ${n === 0 ? 'vazio' : ''}">${contador}</span>
+        </div>
+        <div id="mapa-celulas-area" class="mapa-celulas-area"></div>
+      </section>
+    `;
+  },
+
+  onMount() {
+    if (window.WaveMapaCelulas) {
+      WaveMapaCelulas.montar(document.getElementById('mapa-celulas-area'), {
+        aoAbrirFicha: (liderId) => this.abrirFichaDoMapa(liderId)
+      });
+    }
+  },
+
+  // "Abrir ficha" do balão: fecha o balão e vai para Células com a ficha do líder aberta
+  abrirFichaDoMapa(liderId) {
+    if (window.WaveMapaCelulas) WaveMapaCelulas.fecharBalao();
+    const celulas = WavePages['admin-lideres'];
+    if (celulas && celulas.prepararFicha) celulas.prepararFicha(liderId);
+    WaveApp.navigate('admin-lideres');
   },
 
   selecionarModelo(modeloId) {

@@ -1,7 +1,8 @@
 /* Fake em memória do PostgREST do Supabase (host fictício https://supabase.mock.test).
    Implementa só o que o app usa: GET com filtros eq/neq/in/is + order + select,
-   .single() (Accept vnd.pgrst.object+json → 406 PGRST116 sem linha), POST (insert),
-   PATCH (update) e DELETE, com CORS. Todas as escritas ficam em `writes`. */
+   .single() (Accept vnd.pgrst.object+json → 406 PGRST116 sem linha), POST (insert, e upsert
+   com Prefer resolution=merge-duplicates + on_conflict), PATCH (update) e DELETE, com CORS.
+   Todas as escritas ficam em `writes`. */
 
 const MOCK_HOST = 'supabase.mock.test';
 const MOCK_URL = `https://${MOCK_HOST}`;
@@ -53,6 +54,14 @@ class FakeSupabase {
     this._falhas = [];          // [{ method, table, status, body, abort }]
     this._atrasos = [];         // [{ method, table, ms }]
     this._seq = 0;
+    // Nominatim simulado (stub padrão do fixture): função (URLSearchParams) → array do jsonv2,
+    // ou { status, body } para simular erro HTTP, ou { pendente: true } para nunca responder.
+    // Padrão: pendente — sem resposta não há gravação nem "Failed to load resource" no console,
+    // então abrir o painel com o seed padrão não escreve nada (testes de "zero escritas" e de
+    // console limpo não dependem de tempo). Testes do mapa definem o próprio mock.nominatim.
+    this.nominatim = () => ({ pendente: true });
+    this.consultasNominatim = [];  // URLs recebidas pelo stub
+    this.requisicoesMapa = [];     // MapLibre (CDN) e tiles do OpenFreeMap que chegaram aos stubs
   }
 
   /** Faz requisições casando method/table falharem (status+body ou abort de rede). */
@@ -149,7 +158,18 @@ class FakeSupabase {
     if (method === 'POST') {
       const itens = Array.isArray(body) ? body : [body];
       this.writes.push({ method, table, query, body: clone(body) });
+      // Upsert (supabase-js .upsert): Prefer resolution=merge-duplicates + ?on_conflict=col1,col2
+      const conflito = prefer.includes('resolution=merge-duplicates') && query.on_conflict
+        ? query.on_conflict.split(',').map(s => s.trim()).filter(Boolean)
+        : null;
       const inseridas = itens.map(item => {
+        if (conflito) {
+          const existente = tabela.find(r => conflito.every(c => r[c] === item[c]));
+          if (existente) {
+            Object.assign(existente, clone(item));
+            return existente;
+          }
+        }
         const linha = { ...clone(item) };
         if (!linha.id) linha.id = `${table}-novo-${++this._seq}`;
         if (!linha.criado_em) linha.criado_em = new Date().toISOString();

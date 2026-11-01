@@ -154,5 +154,39 @@ window.WaveSupabase = {
       console.error('Erro de conexão no lote do Supabase:', e);
       return false;
     }
+  },
+
+  // 2. Geocodificação dos endereços das células (cache do mapa do painel).
+  // Tabela própria, sem nome nem vínculo com a pessoa. Sem toast: quem chama decide.
+  // Retorna { ok, linhas } — ok=false quando a tabela não existe ou a leitura falhou.
+  async fetchGeocodificacoes() {
+    const client = await this._ensureClient();
+    if (!client) return { ok: false, linhas: [] };
+    try {
+      const { data, error } = await client
+        .from('geocodificacao_enderecos')
+        .select('endereco_chave,lat,lng,encontrado,atualizado_em');
+      if (error) throw error;
+      return { ok: true, linhas: data || [] };
+    } catch (e) {
+      console.warn('Geocodificação: tabela indisponível, o mapa segue sem gravar.', e && (e.code || e.message));
+      return { ok: false, linhas: [] };
+    }
+  },
+
+  // Upsert por endereco_chave. `atualizado_em` vai explícito: o default do banco só vale no insert.
+  async upsertGeocodificacao(linha) {
+    const client = await this._ensureClient();
+    if (!client || !linha) return false;
+    try {
+      const { error } = await client
+        .from('geocodificacao_enderecos')
+        .upsert([linha], { onConflict: 'endereco_chave' });
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn('Geocodificação: não foi possível gravar (segue sem persistir).', e && (e.code || e.message));
+      return false;
+    }
   }
 };
